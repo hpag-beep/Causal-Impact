@@ -1,0 +1,2219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Causal Impact</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Inter+Tight:wght@600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: clinical, technical instrument for one analyst; no decoration.
+   IDEA: a lab protocol binder: numbered steps, each signed off before the next.
+   PICTURE: the counterfactual chart (observed vs predicted band) is the core figure.
+   COLOUR and TYPE: white, ink, one prussian accent for the model, red only for flags; Inter Tight + Inter.
+   LAYOUT: sticky stepper, one step per view, controls above figures, tables right-aligned. */
+:root{color-scheme:light dark;
+--bg:light-dark(#ffffff,#121417);--panel:light-dark(#f3f4f6,#1b1e22);--ink:light-dark(#111418,#e8eaed);
+--muted:light-dark(#5b626b,#9aa1aa);--line:light-dark(#dde1e6,#2c3137);--accent:light-dark(#0b4f8a,#7fb0e0);
+--band:light-dark(rgba(11,79,138,.16),rgba(127,176,224,.20));--shade:light-dark(rgba(17,20,24,.045),rgba(232,234,237,.06));
+--flag:light-dark(#c1121f,#ff6b6b);--ok:light-dark(#1f6f43,#6fcf97);--grid:light-dark(#eceef1,#23272c)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,Arial,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Inter Tight",Inter,sans-serif;font-weight:600;line-height:1.15;margin:0}
+h1{font-size:20px}h2{font-size:24px;margin-bottom:4px}h3{font-size:16px;margin:22px 0 8px}
+p{margin:6px 0}.muted{color:var(--muted)}.small{font-size:13px}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:14px;padding:10px max(3vw,16px);flex-wrap:wrap}
+.bar .sp{flex:1}
+.steps{display:flex;gap:2px;overflow-x:auto;padding:0 max(3vw,16px)}
+.steps a{flex:none;display:flex;flex-direction:column;padding:8px 14px 9px;text-decoration:none;color:var(--muted);border-bottom:2px solid transparent;font-size:14px}
+.steps a b{font-weight:500;color:var(--ink)}.steps a span{font-size:12px}
+.steps a.on{border-bottom-color:var(--accent)}.steps a.on b{color:var(--accent)}
+.steps a .st-ok{color:var(--ok)}.steps a .st-warn{color:var(--flag)}
+main{max-width:1240px;margin:0 auto;padding:24px max(3vw,16px) 80px}
+.lead{max-width:760px;color:var(--muted);margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px 18px}
+.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.field.wide{grid-column:1/-1}
+input,select,textarea,button{font:inherit;font-size:15px;color:var(--ink)}
+input[type=text],input[type=number],input[type=date],select,textarea{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-height:40px;width:100%}
+textarea{min-height:64px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.check{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:15px;min-height:40px}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+button,.btn{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 14px;min-height:40px;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:500}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.sec{border-top:1px solid var(--line);margin-top:26px;padding-top:4px}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-weight:500;color:var(--muted);font-size:12.5px;white-space:nowrap}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.warnrow td{background:light-dark(rgba(193,18,31,.05),rgba(255,107,107,.08))}
+tr.base td{font-weight:600}
+td select{min-height:34px;padding:4px 6px;font-size:13.5px;min-width:150px}
+.chip{display:inline-block;font-size:12px;padding:1px 8px;border-radius:10px;background:var(--panel);margin:1px 3px 1px 0;white-space:nowrap}
+.chip.flag{color:var(--flag);background:light-dark(rgba(193,18,31,.08),rgba(255,107,107,.12))}
+.chip.ok{color:var(--ok)}
+.flags{list-style:none;padding:0;margin:8px 0}.flags li{padding:4px 0 4px 22px;position:relative;font-size:14px}
+.flags li::before{content:"";position:absolute;left:4px;top:11px;width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.flags li.warn::before{background:var(--flag)}.flags li.pass::before{background:var(--ok)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px;margin:12px 0}
+.tile{background:var(--panel);border-radius:8px;padding:12px 14px}
+.tile .k{font-size:12.5px;color:var(--muted)}.tile .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hero{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:end;margin:16px 0 8px}
+.hero .big{font:600 clamp(40px,7vw,64px)/1 "Inter Tight",Inter,sans-serif;font-variant-numeric:tabular-nums}
+.legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.legend div{padding:8px 10px;border-radius:6px;background:var(--panel);font-size:12.5px;color:var(--muted)}
+.legend div b{display:block;color:var(--ink);font-weight:500;font-size:13.5px}
+.legend div.cur{outline:2px solid var(--ink);color:var(--ink)}
+.fig{position:relative;height:300px;margin:6px 0}.fig.s{height:170px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.tip{position:absolute;pointer-events:none;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.12);white-space:nowrap;z-index:2}
+.tip b{font-weight:600}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:22px;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.status{position:fixed;left:0;right:0;bottom:0;background:var(--ink);color:var(--bg);padding:8px max(3vw,16px);font-size:14px;display:flex;gap:12px;align-items:center;z-index:9}
+.status[hidden]{display:none}.status button{background:transparent;color:var(--bg);border-color:rgba(255,255,255,.35);min-height:32px;padding:4px 10px}
+.prog{flex:none;width:140px;height:4px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden}.prog i{display:block;height:100%;background:var(--bg);width:0}
+.empty{background:var(--panel);border-radius:8px;padding:28px;text-align:center;color:var(--muted)}
+.stale{color:var(--flag);font-size:13px;font-weight:500}
+.note{border:1px solid var(--line);border-left:3px solid var(--flag);border-radius:6px;padding:10px 14px;margin:0 0 16px;max-width:760px;font-size:14px}
+.top a.btn.on{border-color:var(--ink)}
+td.act div{display:flex;flex-direction:column;gap:4px;align-items:stretch}
+td.act button{min-height:30px;padding:3px 10px;font-size:13px;justify-content:center}
+details.menu{position:relative}details.menu>summary{list-style:none;cursor:pointer}details.menu>summary::-webkit-details-marker{display:none}
+details.menu .pop{position:absolute;right:0;top:46px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;width:min(340px,90vw);box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:6}
+.pop .pi{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.spark{width:150px;height:28px;color:var(--muted)}
+.spark .iv{stroke:var(--accent)}
+.kv td:first-child{color:var(--muted);width:230px;font-size:13px}
+.kv td{vertical-align:top}
+.bar-in{height:8px;background:var(--panel);border-radius:4px;width:110px;display:inline-block;vertical-align:middle;margin-right:8px;overflow:hidden}.bar-in i{display:block;height:100%;background:var(--accent)}
+@media(max-width:720px){.hero{grid-template-columns:1fr}.legend{grid-template-columns:repeat(2,minmax(0,1fr))}.kv td:first-child{width:120px}}
+@media(prefers-reduced-motion:no-preference){.prog i{transition:width .2s}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="bar">
+    <h1>Causal Impact</h1>
+    <span class="muted small" id="engv">Engine loading</span>
+    <span class="sp"></span>
+    <details class="menu" id="presetMenu"><summary class="btn">Presets</summary><div class="pop" id="presetPop"></div></details>
+    <a class="btn" href="#history" id="histBtn">History</a>
+    <button id="newTest" type="button">New test</button>
+  </div>
+  <nav class="steps" id="steps"></nav>
+</header>
+<main id="view"></main>
+<div class="status" id="status" hidden><span id="statusText"></span><span class="prog" id="progWrap" hidden><i id="progBar"></i></span><span class="sp" style="flex:1"></span><button type="button" id="cancelJob" hidden>Cancel</button><button type="button" id="closeStatus">Dismiss</button></div>
+<script type="text/plain" id="engine-src">// Causal Impact engine: Bayesian structural time series in JavaScript.
+// Mirrors the defaults of the R packages CausalImpact (Brodersen et al., 2015) and bsts:
+//   * local level, prior SdPrior(prior.level.sd * sdy, sample.size = 32, upper.limit = sdy)
+//   * optional seasonal component, prior SdPrior(0.01 * sdy, sample.size = 0.01, upper.limit = sdy)
+//   * static regression with spike-and-slab prior: expected.model.size = 3, expected.r2 = 0.8,
+//     prior.df = 50, prior.information.weight = 0.01, diagonal.shrinkage = 0.5
+//   * data standardised on the pre-period, post-period response set to missing
+//   * Durbin-Koopman simulation smoother, Gibbs sampling, 10% burn-in
+//   * summary table and one-sided tail probability computed as in CausalImpact
+// Runs unchanged in a browser, a Web Worker or Node (ES module, no dependencies).
+
+export const ENGINE_VERSION = '0.2.0';
+
+const DEFAULTS = {
+  niter: 1000,
+  burnProportion: 0.1,
+  priorLevelSd: 0.01,
+  nseasons: 7,
+  seasonDuration: 1,
+  standardize: true,
+  alpha: 0.05,
+  seed: 1,
+  expectedModelSize: 3,
+  expectedR2: 0.8,
+  priorDf: 50,
+  priorInformationWeight: 0.01,
+  diagonalShrinkage: 0.5,
+  levelPriorSampleSize: 32,
+};
+
+// ---------------------------------------------------------------------------
+// Random numbers (xoshiro128**, seeded by splitmix32)
+// ---------------------------------------------------------------------------
+export function makeRng(seed = 1) {
+  let s = seed >>> 0;
+  const sm = () => {
+    s = (s + 0x9e3779b9) >>> 0;
+    let z = s;
+    z = Math.imul(z ^ (z >>> 16), 0x85ebca6b) >>> 0;
+    z = Math.imul(z ^ (z >>> 13), 0xc2b2ae35) >>> 0;
+    return (z ^ (z >>> 16)) >>> 0;
+  };
+  let a = sm(), b = sm(), c = sm(), d = sm();
+  const next = () => {
+    const r = Math.imul(rotl(Math.imul(b, 5), 7), 9) >>> 0;
+    const t = b << 9;
+    c ^= a; d ^= b; b ^= c; a ^= d; c ^= t; d = rotl(d, 11);
+    return r;
+  };
+  function rotl(x, k) { return (x << k) | (x >>> (32 - k)); }
+  const uniform = () => ((next() >>> 5) * 67108864 + (next() >>> 6) + 0.5) / 9007199254740992; // in (0, 1)
+  let spare = null;
+  const normal = () => {
+    if (spare !== null) { const v = spare; spare = null; return v; }
+    let u, v, q;
+    do { u = 2 * uniform() - 1; v = 2 * uniform() - 1; q = u * u + v * v; } while (q >= 1 || q === 0);
+    const f = Math.sqrt(-2 * Math.log(q) / q);
+    spare = v * f;
+    return u * f;
+  };
+  // Gamma(shape, rate) via Marsaglia-Tsang
+  const gamma = (shape, rate) => {
+    if (shape < 1) return gamma(shape + 1, rate) * Math.pow(uniform(), 1 / shape);
+    const dd = shape - 1 / 3, cc = 1 / Math.sqrt(9 * dd);
+    for (;;) {
+      let x, v;
+      do { x = normal(); v = 1 + cc * x; } while (v <= 0);
+      v = v * v * v;
+      const u = uniform();
+      if (u < 1 - 0.0331 * x ** 4 || Math.log(u) < 0.5 * x * x + dd * (1 - v + Math.log(v))) return dd * v / rate;
+    }
+  };
+  return { uniform, normal, gamma };
+}
+
+// Regularised lower incomplete gamma P(a, x)
+function gammaP(a, x) {
+  if (x <= 0) return 0;
+  const gln = lgamma(a);
+  if (x < a + 1) {
+    let ap = a, sum = 1 / a, del = sum;
+    for (let n = 0; n < 500; n++) { ap += 1; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-14) break; }
+    return sum * Math.exp(-x + a * Math.log(x) - gln);
+  }
+  let b = x + 1 - a, c = 1e300, d = 1 / b, h = d;
+  for (let i = 1; i < 500; i++) {
+    const an = -i * (i - a); b += 2;
+    d = an * d + b; if (Math.abs(d) < 1e-300) d = 1e-300;
+    c = b + an / c; if (Math.abs(c) < 1e-300) c = 1e-300;
+    d = 1 / d; const del = d * c; h *= del;
+    if (Math.abs(del - 1) < 1e-14) break;
+  }
+  return 1 - Math.exp(-x + a * Math.log(x) - gln) * h;
+}
+function lgamma(x) {
+  const g = 7, coef = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313,
+    -176.61577655591664, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+  if (x < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * x))) - lgamma(1 - x);
+  x -= 1; let a = coef[0]; const t = x + g + 0.5;
+  for (let i = 1; i < g + 2; i++) a += coef[i] / (x + i);
+  return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+}
+
+// Draw sigma from the conjugate posterior 1/sigma^2 ~ Gamma(shape, rate), truncated to sigma <= upper.
+function drawSigma(rng, shape, rate, upper) {
+  for (let k = 0; k < 50; k++) {
+    const tau = rng.gamma(shape, rate);
+    const s = 1 / Math.sqrt(tau);
+    if (s <= upper) return s;
+  }
+  // inverse CDF on the truncated region tau >= 1/upper^2
+  const lo = 1 / (upper * upper);
+  const plo = gammaP(shape, rate * lo);
+  if (plo >= 1 - 1e-12) return upper;
+  const u = plo + (1 - plo) * rng.uniform();
+  let a = lo, b = lo * 2;
+  while (gammaP(shape, rate * b) < u) b *= 2;
+  for (let i = 0; i < 80; i++) { const m = 0.5 * (a + b); if (gammaP(shape, rate * m) < u) a = m; else b = m; }
+  return 1 / Math.sqrt(0.5 * (a + b));
+}
+
+// ---------------------------------------------------------------------------
+// Small dense linear algebra
+// ---------------------------------------------------------------------------
+function cholesky(A, k) { // A: Float64Array k*k row-major, returns lower L or null
+  const L = new Float64Array(k * k);
+  for (let i = 0; i < k; i++) {
+    for (let j = 0; j <= i; j++) {
+      let s = A[i * k + j];
+      for (let q = 0; q < j; q++) s -= L[i * k + q] * L[j * k + q];
+      if (i === j) { if (s <= 0) return null; L[i * k + i] = Math.sqrt(s); }
+      else L[i * k + j] = s / L[j * k + j];
+    }
+  }
+  return L;
+}
+function forwardSolve(L, b, k) { const x = new Float64Array(k); for (let i = 0; i < k; i++) { let s = b[i]; for (let q = 0; q < i; q++) s -= L[i * k + q] * x[q]; x[i] = s / L[i * k + i]; } return x; }
+function backSolveT(L, b, k) { const x = new Float64Array(k); for (let i = k - 1; i >= 0; i--) { let s = b[i]; for (let q = i + 1; q < k; q++) s -= L[q * k + i] * x[q]; x[i] = s / L[i * k + i]; } return x; }
+
+// ---------------------------------------------------------------------------
+// State space: level + dummy seasonal (season.duration = 1)
+// state a = [level, s_1, ..., s_{S-1}],  Z = [1, 1, 0, ..., 0]
+// ---------------------------------------------------------------------------
+function makeStateModel(nseasons) {
+  const S = nseasons > 1 ? nseasons : 1;
+  const m = S > 1 ? S : 1; // 1 + (S - 1)
+  const applyT = (v, out) => { // out = T v
+    out[0] = v[0];
+    if (m > 1) {
+      let s = 0; for (let j = 1; j < m; j++) s -= v[j];
+      for (let j = m - 1; j >= 2; j--) out[j] = v[j - 1];
+      out[1] = s;
+    }
+    return out;
+  };
+  const applyTt = (r, out) => { // out = T' r
+    out[0] = r[0];
+    if (m > 1) { for (let j = 1; j < m; j++) out[j] = -r[1] + (j + 1 < m ? r[j + 1] : 0); }
+    return out;
+  };
+  const zDot = (v) => (m > 1 ? v[0] + v[1] : v[0]);
+  return { m, S, applyT, applyTt, zDot };
+}
+
+// Kalman filter + backward smoothing recursion (de Jong / Durbin-Koopman fast state smoother).
+// y: Float64Array with NaN for missing. q: state disturbance variances [level, seasonal]. h: obs variance.
+// Returns smoothed state mean (n*m).
+function fastStateSmoother(model, y, a0, P0diag, q, h, yLL = null, a0LL = null) {
+  const { m, applyT, applyTt, zDot } = model;
+  const n = y.length;
+  const V = new Float64Array(n), F = new Float64Array(n), K = new Float64Array(n * m);
+  let a = Float64Array.from(a0);
+  let P = new Float64Array(m * m);
+  for (let i = 0; i < m; i++) P[i * m + i] = P0diag[i];
+  const tmpA = new Float64Array(m * m), col = new Float64Array(m), colT = new Float64Array(m), na = new Float64Array(m);
+  const pz = new Float64Array(m);
+  // optional second series sharing the same gains: log likelihood of the actual data at no extra P cost
+  let aL = yLL ? Float64Array.from(a0LL) : null, ll = 0;
+  const naL = new Float64Array(m);
+  for (let t = 0; t < n; t++) {
+    const yt = y[t];
+    // T P T'
+    for (let j = 0; j < m; j++) { for (let i = 0; i < m; i++) col[i] = P[i * m + j]; applyT(col, colT); for (let i = 0; i < m; i++) tmpA[i * m + j] = colT[i]; }
+    const TPT = new Float64Array(m * m);
+    for (let i = 0; i < m; i++) { for (let j = 0; j < m; j++) col[j] = tmpA[i * m + j]; applyT(col, colT); for (let j = 0; j < m; j++) TPT[i * m + j] = colT[j]; }
+    if (Number.isNaN(yt)) {
+      V[t] = 0; F[t] = Infinity;
+      applyT(a, na); a = Float64Array.from(na);
+      if (aL) { applyT(aL, naL); aL.set(naL); }
+      P = TPT;
+    } else {
+      for (let i = 0; i < m; i++) pz[i] = m > 1 ? P[i * m] + P[i * m + 1] : P[i * m];
+      const f = zDot(pz) + h;
+      const v = yt - zDot(a);
+      applyT(pz, colT); // T P Z'
+      for (let i = 0; i < m; i++) K[t * m + i] = colT[i] / f;
+      V[t] = v; F[t] = f;
+      if (aL) {
+        const vL = yLL[t] - zDot(aL);
+        ll -= 0.5 * (Math.log(2 * Math.PI * f) + (vL * vL) / f);
+        applyT(aL, naL);
+        for (let i = 0; i < m; i++) naL[i] += K[t * m + i] * vL;
+        aL.set(naL);
+      }
+      applyT(a, na);
+      for (let i = 0; i < m; i++) na[i] += K[t * m + i] * v;
+      a = Float64Array.from(na);
+      for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) TPT[i * m + j] -= K[t * m + i] * K[t * m + j] * f;
+      P = TPT;
+    }
+    P[0] += q[0];
+    if (m > 1) P[m + 1] += q[1];
+  }
+  // backward
+  const rr = new Float64Array((n + 1) * m);
+  const rt = new Float64Array(m), tr = new Float64Array(m);
+  for (let t = n - 1; t >= 0; t--) {
+    for (let i = 0; i < m; i++) rt[i] = rr[(t + 1) * m + i];
+    applyTt(rt, tr);
+    if (F[t] !== Infinity) {
+      let kr = 0; for (let i = 0; i < m; i++) kr += K[t * m + i] * rt[i];
+      const c = V[t] / F[t] - kr;
+      tr[0] += c; if (m > 1) tr[1] += c;
+    }
+    for (let i = 0; i < m; i++) rr[t * m + i] = tr[i];
+  }
+  const alpha = new Float64Array(n * m);
+  for (let i = 0; i < m; i++) alpha[i] = a0[i] + P0diag[i] * rr[i];
+  const cur = new Float64Array(m), nxt = new Float64Array(m);
+  for (let t = 0; t + 1 < n; t++) {
+    for (let i = 0; i < m; i++) cur[i] = alpha[t * m + i];
+    applyT(cur, nxt);
+    nxt[0] += q[0] * rr[(t + 1) * m];
+    if (m > 1) nxt[1] += q[1] * rr[(t + 1) * m + 1];
+    for (let i = 0; i < m; i++) alpha[(t + 1) * m + i] = nxt[i];
+  }
+  if (yLL) alpha.logLik = ll;
+  return alpha;
+}
+
+// Durbin-Koopman (2002) simulation smoother: one draw of the state path given y and parameters.
+export function simulationSmoother(model, y, a0, P0diag, q, h, rng) {
+  const { m, applyT, zDot } = model;
+  const n = y.length;
+  const plus = new Float64Array(n * m);
+  const yplus = new Float64Array(n);
+  const cur = new Float64Array(m), nxt = new Float64Array(m);
+  for (let i = 0; i < m; i++) cur[i] = a0[i] + Math.sqrt(P0diag[i]) * rng.normal();
+  const sq0 = Math.sqrt(q[0]), sq1 = m > 1 ? Math.sqrt(q[1]) : 0, sh = Math.sqrt(h);
+  for (let t = 0; t < n; t++) {
+    for (let i = 0; i < m; i++) plus[t * m + i] = cur[i];
+    yplus[t] = Number.isNaN(y[t]) ? NaN : zDot(cur) + sh * rng.normal();
+    applyT(cur, nxt);
+    nxt[0] += sq0 * rng.normal();
+    if (m > 1) nxt[1] += sq1 * rng.normal();
+    for (let i = 0; i < m; i++) cur[i] = nxt[i];
+  }
+  const ydiff = new Float64Array(n);
+  for (let t = 0; t < n; t++) ydiff[t] = Number.isNaN(y[t]) ? NaN : y[t] - yplus[t];
+  const zero = new Float64Array(m);
+  const hat = fastStateSmoother(model, ydiff, zero, P0diag, q, h, y, a0);
+  for (let k = 0; k < n * m; k++) hat[k] += plus[k];
+  return hat; // hat.logLik = log p(y | parameters)
+}
+
+// ---------------------------------------------------------------------------
+// Spike-and-slab regression (stochastic search variable selection, as BoomSpikeSlab)
+// ---------------------------------------------------------------------------
+function makeSpikeSlab(Xobs, nobs, p, cfg) {
+  // Xobs: array of p Float64Array (observed rows only), standardised
+  const XtX = new Float64Array(p * p);
+  for (let i = 0; i < p; i++) for (let j = i; j < p; j++) {
+    let s = 0; const xi = Xobs[i], xj = Xobs[j];
+    for (let t = 0; t < nobs; t++) s += xi[t] * xj[t];
+    XtX[i * p + j] = XtX[j * p + i] = s;
+  }
+  const Omega = new Float64Array(p * p);
+  for (let i = 0; i < p; i++) for (let j = 0; j < p; j++) {
+    const base = XtX[i * p + j] / nobs;
+    Omega[i * p + j] = cfg.priorInformationWeight * (i === j ? base : (1 - cfg.diagonalShrinkage) * base);
+  }
+  // bsts counts the intercept column when spreading expected.model.size over predictors
+  const pi = Math.min(1, cfg.expectedModelSize / (p + 1));
+  const df0 = cfg.priorDf;
+  const ss0 = cfg.priorDf * (1 - cfg.expectedR2) * cfg.sdy * cfg.sdy;
+  return { XtX, Omega, pi, df0, ss0, p };
+}
+
+function ssLogPost(ss, gamma, Xtr, rtr, nobs) {
+  const { p, XtX, Omega, pi, df0, ss0 } = ss;
+  const idx = []; for (let j = 0; j < p; j++) if (gamma[j]) idx.push(j);
+  const k = idx.length;
+  let lp = 0;
+  if (pi < 1) for (let j = 0; j < p; j++) lp += gamma[j] ? Math.log(pi) : Math.log(1 - pi);
+  let SS = rtr;
+  if (k > 0) {
+    const Om = new Float64Array(k * k), Vi = new Float64Array(k * k), b = new Float64Array(k);
+    for (let a = 0; a < k; a++) { b[a] = Xtr[idx[a]]; for (let c = 0; c < k; c++) { Om[a * k + c] = Omega[idx[a] * p + idx[c]]; Vi[a * k + c] = Om[a * k + c] + XtX[idx[a] * p + idx[c]]; } }
+    const Lo = cholesky(Om, k), Lv = cholesky(Vi, k);
+    if (!Lo || !Lv) return { lp: -Infinity };
+    let ldo = 0, ldv = 0; for (let a = 0; a < k; a++) { ldo += Math.log(Lo[a * k + a]); ldv += Math.log(Lv[a * k + a]); }
+    const w = forwardSolve(Lv, b, k);
+    let q = 0; for (let a = 0; a < k; a++) q += w[a] * w[a];
+    SS = rtr - q;
+    lp += ldo - ldv; // 0.5 log|Om| - 0.5 log|Vi|
+    return { lp: lp - 0.5 * (df0 + nobs) * Math.log(ss0 + SS), idx, Lv, w, SS };
+  }
+  return { lp: lp - 0.5 * (df0 + nobs) * Math.log(ss0 + SS), idx, SS };
+}
+
+// One Gibbs update of (gamma, beta, sigma_obs) given residual r (observed rows).
+function spikeSlabStep(ss, gamma, Xobs, r, nobs, rng, sigmaUpper) {
+  const p = ss.p;
+  const Xtr = new Float64Array(p);
+  for (let j = 0; j < p; j++) { let s = 0; const x = Xobs[j]; for (let t = 0; t < nobs; t++) s += x[t] * r[t]; Xtr[j] = s; }
+  let rtr = 0; for (let t = 0; t < nobs; t++) rtr += r[t] * r[t];
+  let cur = ssLogPost(ss, gamma, Xtr, rtr, nobs);
+  if (ss.pi < 1) {
+    const order = Array.from({ length: p }, (_, j) => j);
+    for (let j = p - 1; j > 0; j--) { const u = Math.floor(rng.uniform() * (j + 1)); [order[j], order[u]] = [order[u], order[j]]; }
+    for (const j of order) {
+      gamma[j] = 1 - gamma[j];
+      const alt = ssLogPost(ss, gamma, Xtr, rtr, nobs);
+      // Gibbs: P(new) = 1 / (1 + exp(cur - alt))
+      const pNew = 1 / (1 + Math.exp(cur.lp - alt.lp));
+      if (rng.uniform() < pNew) cur = alt; else gamma[j] = 1 - gamma[j];
+    }
+  }
+  const sigma = drawSigma(rng, 0.5 * (ss.df0 + nobs), 0.5 * (ss.ss0 + Math.max(cur.SS, 0)), sigmaUpper);
+  const beta = new Float64Array(p);
+  if (cur.idx && cur.idx.length) {
+    const k = cur.idx.length;
+    const z = new Float64Array(k); for (let a = 0; a < k; a++) z[a] = cur.w[a] + sigma * rng.normal();
+    const bk = backSolveT(cur.Lv, z, k); // beta = Vi^{-1} Xtr + sigma * L^{-T} e
+    for (let a = 0; a < k; a++) beta[cur.idx[a]] = bk[a];
+  }
+  return { beta, sigma };
+}
+
+
+// Log likelihood log p(y | parameters) by the prediction error decomposition (bsts log.likelihood).
+function kalmanLogLik(model, y, a0, P0diag, q, h) {
+  const { m, applyT, zDot } = model;
+  let a = Float64Array.from(a0), P = new Float64Array(m * m);
+  for (let i = 0; i < m; i++) P[i * m + i] = P0diag[i];
+  const col = new Float64Array(m), colT = new Float64Array(m), tmp = new Float64Array(m * m), pz = new Float64Array(m), na = new Float64Array(m);
+  let ll = 0;
+  for (let t = 0; t < y.length; t++) {
+    const TPT = new Float64Array(m * m);
+    for (let j = 0; j < m; j++) { for (let i = 0; i < m; i++) col[i] = P[i * m + j]; applyT(col, colT); for (let i = 0; i < m; i++) tmp[i * m + j] = colT[i]; }
+    for (let i = 0; i < m; i++) { for (let j = 0; j < m; j++) col[j] = tmp[i * m + j]; applyT(col, colT); for (let j = 0; j < m; j++) TPT[i * m + j] = colT[j]; }
+    applyT(a, na);
+    if (!Number.isNaN(y[t])) {
+      for (let i = 0; i < m; i++) pz[i] = m > 1 ? P[i * m] + P[i * m + 1] : P[i * m];
+      const f = zDot(pz) + h, v = y[t] - zDot(a);
+      ll -= 0.5 * (Math.log(2 * Math.PI * f) + (v * v) / f);
+      applyT(pz, colT);
+      for (let i = 0; i < m; i++) { const k = colT[i] / f; na[i] += k * v; for (let j = 0; j < m; j++) TPT[i * m + j] -= k * colT[j]; }
+    }
+    a = Float64Array.from(na); P = TPT;
+    P[0] += q[0]; if (m > 1) P[m + 1] += q[1];
+  }
+  return ll;
+}
+
+// bsts::SuggestBurn: discard `proportion` of the draws, and at least every draw before the log
+// likelihood first reaches the 10% quantile of its post-burn-in values.
+export function suggestBurn(proportion, logLik) {
+  const niter = logLik.length;
+  let burn = Math.floor(proportion * niter);
+  if (burn > 0) {
+    const sorted = Float64Array.from(logLik.subarray(burn)).sort();
+    const thr = quantile(sorted, 0.1);
+    let first = 0; while (first < niter && logLik[first] < thr) first++;
+    burn = Math.max(burn, first);
+  }
+  return burn;
+}
+
+// ---------------------------------------------------------------------------
+// BSTS Gibbs sampler on (already standardised) data
+// ---------------------------------------------------------------------------
+export function fitBsts({ y, X = [], nseasons = 7, priorLevelSd = 0.01, niter = 1000, burnProportion = 0.1, seed = 1, cfg = {} }) {
+  const c = { ...DEFAULTS, ...cfg };
+  const n = y.length, p = X.length;
+  const rng = makeRng(seed);
+  const model = makeStateModel(nseasons);
+  const m = model.m;
+  const obsIdx = []; for (let t = 0; t < n; t++) if (!Number.isNaN(y[t])) obsIdx.push(t);
+  const nobs = obsIdx.length;
+  let mean = 0; for (const t of obsIdx) mean += y[t]; mean /= nobs;
+  let v = 0; for (const t of obsIdx) v += (y[t] - mean) ** 2;
+  const sdy = Math.sqrt(v / (nobs - 1)) || 1;
+  const y1 = y[obsIdx[0]];
+  const a0 = new Float64Array(m); a0[0] = y1;
+  const P0 = new Float64Array(m).fill(sdy * sdy);
+  // priors
+  const lvl = { df: c.levelPriorSampleSize, ss: c.levelPriorSampleSize * (priorLevelSd * sdy) ** 2, upper: sdy };
+  const sea = { df: 0.01, ss: 0.01 * (0.01 * sdy) ** 2, upper: sdy };
+  const obsPrior = { df: 0.01, ss: 0.01 * sdy * sdy, upper: 1.2 * sdy };
+  const Xobs = X.map((col) => Float64Array.from(obsIdx, (t) => col[t]));
+  const ss = p ? makeSpikeSlab(Xobs, nobs, p, { ...c, sdy }) : null;
+  // init
+  let sigLevel = priorLevelSd * sdy, sigSeas = 0.01 * sdy, sigObs = p ? Math.sqrt(1 - c.expectedR2) * sdy : sdy;
+  let beta = new Float64Array(p);
+  const gamma = new Uint8Array(p).fill(ss && ss.pi >= 1 ? 1 : 0);
+  // all draws are stored, burn-in is chosen afterwards as bsts::SuggestBurn does
+  const allContrib = new Float64Array(n * niter); // [t * niter + it]
+  const allSigObs = new Float64Array(niter), allSigLevel = new Float64Array(niter), allSigSeas = new Float64Array(niter);
+  const allBetas = new Float64Array(niter * p);
+  const logLik = new Float64Array(niter);
+  const reg = new Float64Array(n);
+  const yeff = new Float64Array(n);
+  const r = new Float64Array(nobs);
+  for (let it = 0; it < niter; it++) {
+    for (let t = 0; t < n; t++) {
+      let s = 0; for (let j = 0; j < p; j++) if (beta[j] !== 0) s += beta[j] * X[j][t];
+      reg[t] = s;
+      yeff[t] = Number.isNaN(y[t]) ? NaN : y[t] - s;
+    }
+    const q = [sigLevel * sigLevel, sigSeas * sigSeas];
+    const alpha = simulationSmoother(model, yeff, a0, P0, q, sigObs * sigObs, rng);
+    // state variances
+    let e0 = 0, e1 = 0;
+    for (let t = 0; t + 1 < n; t++) {
+      const d0 = alpha[(t + 1) * m] - alpha[t * m];
+      e0 += d0 * d0;
+      if (m > 1) { let s = alpha[(t + 1) * m + 1]; for (let j = 1; j < m; j++) s += alpha[t * m + j]; e1 += s * s; }
+    }
+    sigLevel = drawSigma(rng, 0.5 * (lvl.df + n - 1), 0.5 * (lvl.ss + e0), lvl.upper);
+    if (m > 1) sigSeas = drawSigma(rng, 0.5 * (sea.df + n - 1), 0.5 * (sea.ss + e1), sea.upper);
+    // regression + observation variance
+    for (let k = 0; k < nobs; k++) { const t = obsIdx[k]; r[k] = y[t] - model.zDot(alpha.subarray(t * m, t * m + m)); }
+    if (p) {
+      const res = spikeSlabStep(ss, gamma, Xobs, r, nobs, rng, 1.2 * sdy);
+      beta = res.beta; sigObs = res.sigma;
+    } else {
+      let e = 0; for (let k = 0; k < nobs; k++) e += r[k] * r[k];
+      sigObs = drawSigma(rng, 0.5 * (obsPrior.df + nobs), 0.5 * (obsPrior.ss + e), obsPrior.upper);
+    }
+    for (let t = 0; t < n; t++) {
+      let s = 0; for (let j = 0; j < p; j++) if (beta[j] !== 0) s += beta[j] * X[j][t];
+      allContrib[t * niter + it] = model.zDot(alpha.subarray(t * m, t * m + m)) + s;
+    }
+    allSigObs[it] = sigObs; allSigLevel[it] = sigLevel; allSigSeas[it] = sigSeas;
+    for (let j = 0; j < p; j++) allBetas[it * p + j] = beta[j];
+    logLik[it] = alpha.logLik; // log likelihood at the parameters used for this state draw
+  }
+  const burn = suggestBurn(burnProportion, logLik);
+  const keep = niter - burn;
+  const contrib = new Float64Array(n * keep);
+  for (let t = 0; t < n; t++) contrib.set(allContrib.subarray(t * niter + burn, (t + 1) * niter), t * keep);
+  return {
+    n, p, keep, burn, contrib, logLik, rng,
+    sigmaObs: allSigObs.slice(burn), sigmaLevel: allSigLevel.slice(burn), sigmaSeas: allSigSeas.slice(burn),
+    betas: allBetas.slice(burn * p),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Statistics helpers
+// ---------------------------------------------------------------------------
+export function quantile(sorted, prob) { // R type 7 on a sorted array
+  const n = sorted.length; if (!n) return NaN;
+  const h = (n - 1) * prob, lo = Math.floor(h), hi = Math.ceil(h);
+  return sorted[lo] + (h - lo) * (sorted[hi] - sorted[lo]);
+}
+const meanOf = (a) => { let s = 0; for (const v of a) s += v; return s / a.length; };
+const sdOf = (a) => { const mu = meanOf(a); let s = 0; for (const v of a) s += (v - mu) ** 2; return Math.sqrt(s / (a.length - 1)); };
+
+// ---------------------------------------------------------------------------
+// CausalImpact on index ranges
+// ---------------------------------------------------------------------------
+// y: number[] (response, full series), X: { name: number[] } covariates aligned on y
+// pre = [i0, i1], post = [j0, j1] inclusive indices, i0 <= i1 < j0 <= j1
+export function causalImpact({ y, X = {}, pre, post, options = {} }) {
+  const o = { ...DEFAULTS, ...options };
+  const [i0, i1] = pre, [j0, j1] = post;
+  if (!(i0 <= i1 && i1 < j0 && j0 <= j1)) throw new Error('Invalid periods: pre-period must end before post-period starts.');
+  const n = j1 - i0 + 1;
+  const names = Object.keys(X);
+  const nPre = i1 - i0 + 1;
+  const yRaw = Float64Array.from({ length: n }, (_, k) => +y[i0 + k]);
+  // standardisation on the pre-period
+  const preVals = Array.from(yRaw.subarray(0, nPre)).filter((v) => Number.isFinite(v));
+  if (preVals.length < 3) throw new Error('Pre-period has fewer than 3 observed points.');
+  const muY = o.standardize ? meanOf(preVals) : 0;
+  const sdY = o.standardize ? (sdOf(preVals) || 1) : 1;
+  const ys = new Float64Array(n);
+  for (let k = 0; k < n; k++) ys[k] = k < nPre && Number.isFinite(yRaw[k]) ? (yRaw[k] - muY) / sdY : NaN;
+  const used = [], dropped = [], Xs = [], scale = {};
+  for (const name of names) {
+    const col = Float64Array.from({ length: n }, (_, k) => +X[name][i0 + k]);
+    if (col.some((v) => !Number.isFinite(v))) { dropped.push({ name, reason: 'missing values' }); continue; }
+    const pv = Array.from(col.subarray(0, nPre));
+    const mu = meanOf(pv), sd = sdOf(pv);
+    if (!(sd > 1e-12)) { dropped.push({ name, reason: 'constant over the pre-period' }); continue; }
+    const m = o.standardize ? mu : 0, s = o.standardize ? sd : 1;
+    Xs.push(col.map((v) => (v - m) / s)); used.push(name); scale[name] = { mean: mu, sd };
+  }
+  const fit = fitBsts({ y: ys, X: Xs, nseasons: o.nseasons, priorLevelSd: o.priorLevelSd, niter: o.niter, burnProportion: o.burnProportion, seed: o.seed, cfg: o });
+  const { keep, contrib, sigmaObs, rng } = fit;
+  // posterior predictive samples on the original scale: [t * keep + d]
+  const samples = new Float64Array(n * keep);
+  for (let t = 0; t < n; t++) for (let d = 0; d < keep; d++) samples[t * keep + d] = (contrib[t * keep + d] + sigmaObs[d] * rng.normal()) * sdY + muY;
+  const a = o.alpha;
+  const series = [];
+  const col = new Float64Array(keep);
+  for (let t = 0; t < n; t++) {
+    for (let d = 0; d < keep; d++) col[d] = samples[t * keep + d];
+    const mean = meanOf(col);
+    const sorted = Float64Array.from(col).sort();
+    series.push({ index: i0 + t, actual: yRaw[t], pred: mean, predLower: quantile(sorted, a / 2), predUpper: quantile(sorted, 1 - a / 2), period: t < nPre ? 'pre' : (i0 + t >= j0 ? 'post' : 'gap') });
+  }
+  // post-period aggregates
+  const postT = []; for (let t = 0; t < n; t++) if (i0 + t >= j0) postT.push(t);
+  const nPost = postT.length;
+  const sums = new Float64Array(keep);
+  for (const t of postT) for (let d = 0; d < keep; d++) sums[d] += samples[t * keep + d];
+  // cumulative effect series (post only)
+  let cumActual = 0; const cumSamples = new Float64Array(keep);
+  for (const t of postT) {
+    const s = series[t];
+    s.effect = s.actual - s.pred; s.effectLower = s.actual - s.predUpper; s.effectUpper = s.actual - s.predLower;
+    cumActual += s.actual;
+    for (let d = 0; d < keep; d++) cumSamples[d] += samples[t * keep + d];
+    const cs = Float64Array.from(cumSamples).sort();
+    const cm = meanOf(cumSamples);
+    s.cumEffect = cumActual - cm; s.cumEffectLower = cumActual - quantile(cs, 1 - a / 2); s.cumEffectUpper = cumActual - quantile(cs, a / 2);
+  }
+  for (let t = 0; t < n; t++) if (series[t].period !== 'post') { const s = series[t]; s.effect = s.actual - s.pred; s.effectLower = s.actual - s.predUpper; s.effectUpper = s.actual - s.predLower; }
+  const actualPost = postT.map((t) => yRaw[t]);
+  if (actualPost.some((v) => !Number.isFinite(v))) throw new Error('Post-period response contains missing values.');
+  const summary = summarise(actualPost, sums, postT.map((t) => series[t].pred), a);
+  // inclusion probabilities, coefficients (standardised and original scale)
+  const covariates = used.map((name, j) => {
+    let inc = 0, sumB = 0;
+    for (let d = 0; d < keep; d++) { const b = fit.betas[d * fit.p + j]; if (b !== 0) { inc++; sumB += b; } }
+    const mb = inc ? sumB / inc : 0;
+    return { name, inclusionProb: inc / keep, coefStd: mb, coefOriginal: o.standardize ? mb * sdY / scale[name].sd : mb };
+  });
+  // in-sample fit diagnostics (posterior mean vs actual over pre-period)
+  const preFit = fitStats(series.filter((s) => s.period === 'pre'));
+  return {
+    engine: ENGINE_VERSION, options: o, pre, post, nPre, nPost,
+    covariatesUsed: used, covariatesDropped: dropped, covariates,
+    series, summary, preFit,
+    posteriorSamplesPostSum: sums,
+    burnIn: fit.burn,
+    sigma: { obs: meanOf(fit.sigmaObs) * sdY, level: meanOf(fit.sigmaLevel) * sdY, seasonal: meanOf(fit.sigmaSeas) * sdY },
+  };
+}
+
+// Summary table and tail probability, CausalImpact::CompileSummaryTable / ComputeCumulativePredictions
+export function summarise(actualPost, sampleSums, pointPredPost, alpha = 0.05) {
+  const nPost = actualPost.length;
+  const yPostSum = actualPost.reduce((s, v) => s + v, 0);
+  const predSum = pointPredPost.reduce((s, v) => s + v, 0);
+  const sorted = Float64Array.from(sampleSums).sort();
+  const lo = quantile(sorted, alpha / 2), hi = quantile(sorted, 1 - alpha / 2);
+  const sdSum = sdOf(sampleSums);
+  let ge = 1, le = 1; // the observed value is included, as in R
+  for (const s of sampleSums) { if (s >= yPostSum) ge++; if (s <= yPostSum) le++; }
+  const pValue = Math.min(ge, le) / (sampleSums.length + 1);
+  // relative effect computed draw by draw, as CausalImpact >= 1.2: actual / prediction - 1
+  const rel = Float64Array.from(sampleSums, (sv) => yPostSum / sv - 1);
+  const relSorted = Float64Array.from(rel).sort();
+  const relBlock = { relEffect: meanOf(rel), relEffectLower: quantile(relSorted, alpha / 2), relEffectUpper: quantile(relSorted, 1 - alpha / 2), relEffectSd: sdOf(rel) };
+  const block = (actual, pred, pl, pu, psd) => ({
+    actual, pred, predLower: pl, predUpper: pu, predSd: psd,
+    absEffect: actual - pred, absEffectLower: actual - pu, absEffectUpper: actual - pl, absEffectSd: psd,
+    ...relBlock,
+  });
+  return {
+    average: block(yPostSum / nPost, predSum / nPost, lo / nPost, hi / nPost, sdSum / nPost),
+    cumulative: block(yPostSum, predSum, lo, hi, sdSum),
+    pValue, probCausal: 1 - pValue, alpha,
+    intervalExcludesZero: (yPostSum - hi > 0) || (yPostSum - lo < 0),
+  };
+}
+
+// Re-read a fitted window with the observed post-period scaled by (1 + uplift).
+// Valid because the post-period response never enters the fit.
+export function rescoreWithUplift(result, uplift) {
+  const post = result.series.filter((s) => s.period === 'post');
+  const actual = post.map((s) => s.actual * (1 + uplift));
+  return summarise(actual, result.posteriorSamplesPostSum, post.map((s) => s.pred), result.options.alpha);
+}
+
+export function fitStats(rows) {
+  const ok = rows.filter((s) => Number.isFinite(s.actual));
+  if (!ok.length) return null;
+  let ape = 0, nApe = 0, inside = 0, err = 0, sumA = 0;
+  for (const s of ok) {
+    if (s.actual !== 0) { ape += Math.abs((s.actual - s.pred) / s.actual); nApe++; }
+    if (s.actual >= s.predLower && s.actual <= s.predUpper) inside++;
+    err += s.actual - s.pred; sumA += s.actual;
+  }
+  return { n: ok.length, mape: nApe ? ape / nApe : NaN, coverage: inside / ok.length, bias: err / sumA };
+}
+
+// Grid used as a legend in the interface (incrementalite skill). Not a verdict on its own.
+export function confidenceBand(probCausal, intervalExcludesZero) {
+  if (probCausal >= 0.95 && intervalExcludesZero) return 'robust';
+  if (probCausal >= 0.9) return 'favorable';
+  if (probCausal >= 0.7) return 'trend';
+  return 'inconclusive';
+}
+const BAND_ORDER = ['inconclusive', 'trend', 'favorable', 'robust'];
+
+// ---------------------------------------------------------------------------
+// Protocol, step 4: validation of the counterfactual
+// ---------------------------------------------------------------------------
+// 4.1 Hold-out fit: train up to the last `validationLength` points of the pre-period, predict them.
+export function holdoutValidation({ y, X, pre, validationLength, options = {} }) {
+  const [i0, i1] = pre;
+  const res = causalImpact({ y, X, pre: [i0, i1 - validationLength], post: [i1 - validationLength + 1, i1], options });
+  const post = res.series.filter((s) => s.period === 'post');
+  return { window: [i1 - validationLength + 1, i1], ...fitStats(post), probCausal: res.summary.probCausal, relEffect: res.summary.average.relEffect, series: res.series, result: res };
+}
+
+// Placebo windows of length L, walking back from the end of the pre-period.
+export function placeboWindows({ pre, postLength, count, minPreLength, exclude = [] }) {
+  const [i0, i1] = pre;
+  const L = postLength;
+  const minPre = Math.max(minPreLength ?? 0, 3 * L, 56);
+  const out = [];
+  let end = i1;
+  while (out.length < count) {
+    const start = end - L + 1;
+    if (start - i0 < minPre) break;
+    const clash = exclude.some(([a, b]) => !(b < start || a > end));
+    if (!clash) out.push([start, end]);
+    end -= L;
+  }
+  return out;
+}
+
+// 4.2 Placebos + 4.4 power from the same fits (uplift injected on the observed window).
+export function placeboAndPower({ y, X, pre, postLength, count = 10, exclude = [], uplifts = [0.05, 0.1, 0.15, 0.2], options = {}, onProgress }) {
+  const wins = placeboWindows({ pre, postLength, count, exclude });
+  const placebos = [];
+  wins.forEach(([s, e], k) => {
+    const res = causalImpact({ y, X, pre: [pre[0], s - 1], post: [s, e], options: { ...options, seed: (options.seed ?? 1) + k } });
+    const sm = res.summary;
+    const power = uplifts.map((u) => { const r = rescoreWithUplift(res, u); return { uplift: u, probCausal: r.probCausal, detected: r.probCausal >= 0.95 && r.cumulative.absEffectLower > 0 }; });
+    placebos.push({ window: [s, e], probCausal: sm.probCausal, relEffect: sm.average.relEffect, relEffectLower: sm.average.relEffectLower, relEffectUpper: sm.average.relEffectUpper, intervalExcludesZero: sm.intervalExcludesZero, band: confidenceBand(sm.probCausal, sm.intervalExcludesZero), mape: fitStats(res.series.filter((x) => x.period === 'post')).mape, power });
+    onProgress && onProgress((k + 1) / wins.length);
+  });
+  const nRobust = placebos.filter((p) => p.band === 'robust').length;
+  const detection = uplifts.map((u, i) => ({ uplift: u, share: placebos.length ? placebos.filter((p) => p.power[i].detected).length / placebos.length : NaN }));
+  const mdeRow = detection.find((d) => d.share >= 0.8);
+  return {
+    placebos, nWindows: placebos.length, nRobust, falsePositiveShare: placebos.length ? nRobust / placebos.length : NaN,
+    detection, mde: mdeRow ? mdeRow.uplift : null,
+    // true when the smallest tested uplift is already detected: the real MDE is at or below it
+    mdeAtGridFloor: !!mdeRow && mdeRow.uplift === Math.min(...uplifts),
+  };
+}
+
+// 4.3 Sensitivity: prior, seasonality, leave-one-covariate-out, shifted pre-period start.
+export function sensitivity({ y, X, pre, post, options = {}, preShift, onProgress }) {
+  const o = { ...DEFAULTS, ...options };
+  const variants = [];
+  const add = (label, kind, args) => variants.push({ label, kind, args });
+  add('Base model', 'base', {});
+  add(`Level prior ${o.priorLevelSd === 0.01 ? 0.1 : 0.01}`, 'prior', { options: { priorLevelSd: o.priorLevelSd === 0.01 ? 0.1 : 0.01 } });
+  add(o.nseasons > 1 ? 'Without weekly seasonality' : 'With weekly seasonality', 'season', { options: { nseasons: o.nseasons > 1 ? 1 : 7 } });
+  for (const name of Object.keys(X)) add(`Without ${name}`, 'drop', { drop: name });
+  const shift = preShift ?? Math.floor((pre[1] - pre[0] + 1) / 4);
+  if (pre[1] - (pre[0] + shift) + 1 >= 56) add(`Pre-period start +${shift} days`, 'shift', { pre: [pre[0] + shift, pre[1]] });
+  const rows = variants.map((v, k) => {
+    const Xv = { ...X }; if (v.args.drop) delete Xv[v.args.drop];
+    const res = causalImpact({ y, X: Xv, pre: v.args.pre ?? pre, post, options: { ...o, ...(v.args.options || {}) } });
+    const s = res.summary;
+    onProgress && onProgress((k + 1) / variants.length);
+    return { label: v.label, kind: v.kind, probCausal: s.probCausal, relEffect: s.average.relEffect, relEffectLower: s.average.relEffectLower, relEffectUpper: s.average.relEffectUpper, absEffectCum: s.cumulative.absEffect, intervalExcludesZero: s.intervalExcludesZero, band: confidenceBand(s.probCausal, s.intervalExcludesZero), preMape: res.preFit.mape };
+  });
+  const bands = rows.map((r) => BAND_ORDER.indexOf(r.band));
+  return { rows, lowestBand: BAND_ORDER[Math.min(...bands)], highestBand: BAND_ORDER[Math.max(...bands)], crossesThreshold: Math.min(...bands) !== Math.max(...bands) };
+}
+
+// ---------------------------------------------------------------------------
+// Dates and exports
+// ---------------------------------------------------------------------------
+export function isoDate(d) { return d.toISOString().slice(0, 10); }
+export function parseIso(s) { const [Y, M, D] = s.split('-').map(Number); return new Date(Date.UTC(Y, M - 1, D)); }
+export function indexOfDate(dates, iso) { const i = dates.indexOf(iso); if (i < 0) throw new Error(`Date ${iso} not found in data.`); return i; }
+
+export function resultToCsv(result, dates) {
+  const head = ['date', 'period', 'actual', 'pred', 'pred_lower', 'pred_upper', 'point_effect', 'point_effect_lower', 'point_effect_upper', 'cum_effect', 'cum_effect_lower', 'cum_effect_upper'];
+  const f = (v) => (v === undefined || !Number.isFinite(v) ? '' : String(+v.toPrecision(10)));
+  const lines = [head.join(',')];
+  for (const s of result.series) lines.push([dates ? dates[s.index] : s.index, s.period, f(s.actual), f(s.pred), f(s.predLower), f(s.predUpper), f(s.effect), f(s.effectLower), f(s.effectUpper), f(s.cumEffect), f(s.cumEffectLower), f(s.cumEffectUpper)].join(','));
+  return lines.join('\n');
+}
+
+// R control script reproducing the run with the CausalImpact package.
+export function rScript({ csvFile, dateColumn = 'date', target, covariates = [], preStart, preEnd, postStart, postEnd, options = {}, toolName = 'Causal Impact tool' }) {
+  const o = { ...DEFAULTS, ...options };
+  const q = (s) => JSON.stringify(s);
+  const cols = [target, ...covariates].map(q).join(', ');
+  return `# Control script generated by ${toolName} (engine ${ENGINE_VERSION}) on ${new Date().toISOString().slice(0, 10)}
+# Reproduces the JavaScript run with the R package CausalImpact. Monte Carlo noise means
+# figures match within sampling error, not to the last decimal.
+# install.packages(c("CausalImpact", "zoo"))
+library(CausalImpact)
+library(zoo)
+
+df <- read.csv(${q(csvFile)}, check.names = FALSE, stringsAsFactors = FALSE)
+dates <- as.Date(df[[${q(dateColumn)}]])
+series <- zoo(as.matrix(df[, c(${cols}), drop = FALSE]), dates)  # response first, then covariates
+
+pre.period  <- as.Date(c(${q(preStart)}, ${q(preEnd)}))
+post.period <- as.Date(c(${q(postStart)}, ${q(postEnd)}))
+series <- window(series, start = pre.period[1], end = post.period[2])
+
+set.seed(${o.seed})
+impact <- CausalImpact(series, pre.period, post.period, alpha = ${o.alpha},
+  model.args = list(niter = ${o.niter}, nseasons = ${o.nseasons}, season.duration = ${o.seasonDuration},
+                    prior.level.sd = ${o.priorLevelSd}, standardize.data = ${o.standardize ? 'TRUE' : 'FALSE'},
+                    dynamic.regression = FALSE))
+
+summary(impact)
+cat(sprintf("Probability of causal effect: %.1f%%\\n", 100 * (1 - impact$summary$p[1])))
+${covariates.length ? `
+# Posterior inclusion probability of each covariate
+burn <- SuggestBurn(0.1, impact$model$bsts.model)
+coefs <- impact$model$bsts.model$coefficients[-(1:burn), , drop = FALSE]
+print(round(sort(colMeans(coefs != 0), decreasing = TRUE), 3))
+` : ''}
+plot(impact)
+`;
+}
+
+// Internals exposed for the validation suite only.
+export const _internal = { kalmanLogLik, makeStateModel, fastStateSmoother, makeSpikeSlab, ssLogPost, spikeSlabStep, drawSigma, gammaP, lgamma, cholesky };
+</script>
+<script type="text/plain" id="worker-src">// Worker handler, appended after ci-engine.js (engine source left unchanged).
+const slimCi = (r) => { const { posteriorSamplesPostSum, ...rest } = r; return rest; };
+
+function runPlacebos({ y, X, valPre, L, minHist, stride, count, uplifts, options }, prog) {
+  const [i0, i1] = valPre;
+  const wins = [];
+  let end = i1;
+  while (wins.length < count) {
+    const start = end - L + 1;
+    if (start - i0 < Math.max(minHist, 3)) break;
+    wins.push([start, end]);
+    end -= stride;
+  }
+  const placebos = [];
+  wins.forEach(([s, e], k) => {
+    const res = causalImpact({ y, X, pre: [i0, s - 1], post: [s, e], options: { ...options, seed: (options.seed ?? 1) + k } });
+    const sm = res.summary;
+    const power = uplifts.map((u) => {
+      const r = rescoreWithUplift(res, u);
+      return { uplift: u, probCausal: r.probCausal, detected: r.probCausal >= 0.95 && r.cumulative.absEffectLower > 0 };
+    });
+    placebos.push({
+      window: [s, e], trainLength: s - i0, probCausal: sm.probCausal,
+      relEffect: sm.average.relEffect, relEffectLower: sm.average.relEffectLower, relEffectUpper: sm.average.relEffectUpper,
+      intervalExcludesZero: sm.intervalExcludesZero, band: confidenceBand(sm.probCausal, sm.intervalExcludesZero),
+      mape: fitStats(res.series.filter((x) => x.period === 'post')).mape, power,
+    });
+    prog((k + 1) / wins.length);
+  });
+  const nRobust = placebos.filter((p) => p.band === 'robust').length;
+  const detection = uplifts.map((u, i) => ({ uplift: u, share: placebos.length ? placebos.filter((p) => p.power[i].detected).length / placebos.length : NaN }));
+  const mdeRow = detection.find((d) => d.share >= 0.8);
+  return {
+    placebos, nWindows: placebos.length, nRobust,
+    falsePositiveShare: placebos.length ? nRobust / placebos.length : NaN,
+    detection, mde: mdeRow ? mdeRow.uplift : null,
+    mdeAtGridFloor: !!mdeRow && mdeRow.uplift === Math.min(...uplifts),
+  };
+}
+
+self.onmessage = (ev) => {
+  const { id, task, p } = ev.data;
+  const prog = (f) => self.postMessage({ id, progress: f });
+  try {
+    let out;
+    if (task === 'version') out = ENGINE_VERSION;
+    else if (task === 'analysis') {
+      const r = causalImpact(p);
+      out = slimCi(r);
+      out.band = confidenceBand(r.summary.probCausal, r.summary.intervalExcludesZero);
+      out.csv = resultToCsv(r, p.dates);
+    } else if (task === 'holdout') {
+      const h = holdoutValidation(p);
+      out = { window: h.window, n: h.n, mape: h.mape, coverage: h.coverage, bias: h.bias, probCausal: h.probCausal, relEffect: h.relEffect, series: h.series };
+    } else if (task === 'placebos') out = runPlacebos(p, prog);
+    else if (task === 'sensitivity') out = sensitivity({ ...p, onProgress: prog });
+    else if (task === 'rscript') out = rScript(p);
+    else throw new Error('Unknown task ' + task);
+    self.postMessage({ id, ok: true, out });
+  } catch (e) {
+    self.postMessage({ id, ok: false, error: String((e && e.message) || e) });
+  }
+};
+</script>
+<script>
+{
+'use strict';
+// ======================================================================
+// Utilities
+// ======================================================================
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DAY = 864e5;
+const isoAdd = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * DAY).toISOString().slice(0, 10);
+const dayDiff = (a, b) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / DAY);
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fDate = (iso) => { if (!iso) return 'n/a'; const [y, m, d] = iso.split('-'); return `${+d} ${MONTHS[+m - 1]} ${y}`; };
+const fShort = (iso) => { const [, m, d] = iso.split('-'); return `${+d} ${MONTHS[+m - 1]}`; };
+const isNum = Number.isFinite;
+const pct = (x, d = 1, sign = true) => (!isNum(x) ? 'n/a' : (sign && x > 0 ? '+' : '') + (x * 100).toFixed(d) + '%');
+const num = (x, d = 1) => (!isNum(x) ? 'n/a' : x.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }));
+const sgn = (x, d = 1) => (isNum(x) && x > 0 ? '+' : '') + num(x, d);
+const mean = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+const median = (a) => { const s = [...a].sort((x, y) => x - y); const n = s.length; if (!n) return NaN; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+function corr(a, b) {
+  const xs = [], ys = [];
+  for (let i = 0; i < a.length; i++) if (isNum(a[i]) && isNum(b[i])) { xs.push(a[i]); ys.push(b[i]); }
+  if (xs.length < 3) return NaN;
+  const mx = mean(xs), my = mean(ys); let sxy = 0, sx = 0, sy = 0;
+  for (let i = 0; i < xs.length; i++) { const dx = xs[i] - mx, dy = ys[i] - my; sxy += dx * dy; sx += dx * dx; sy += dy * dy; }
+  return sx > 0 && sy > 0 ? sxy / Math.sqrt(sx * sy) : NaN;
+}
+function hashStr(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h.toString(16).padStart(8, '0'); }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const BANDS = [
+  ['robust', 'Robust', '≥ 95% and 95% interval excludes zero'],
+  ['favorable', 'Favorable', '≥ 90%'],
+  ['trend', 'Trend', '70% to 90%'],
+  ['inconclusive', 'Inconclusive', '< 70%'],
+];
+const bandName = (b) => (BANDS.find((x) => x[0] === b) || [, b])[1];
+const CATEGORIES = ['', 'Market demand', 'Competition', 'Seasonality', 'Regulatory & macro', 'Alternative channel', 'Brand'];
+const STATUSES = ['Not reviewed', 'Intact', 'Doubtful', 'Exposed'];
+const STEPS = [['data', 'Data'], ['design', 'Design'], ['covariates', 'Covariates'], ['validation', 'Validation'], ['sheet', 'Test sheet'], ['analysis', 'Analysis'], ['sensitivity', 'Sensitivity']];
+
+// ======================================================================
+// State
+// ======================================================================
+const KEY = 'ci-tool-state-v1', PKEY = 'ci-tool-presets-v1';
+const blankFraming = () => ({ decision: '', event: '', h0: '', h1: '', kpi2: '', kpi3: '', eventsPre: '', eventsPost: '', tracking: '', threshold: '' });
+const blankDesign = () => ({ kpi: '', preStart: '', preEnd: '', intervention: '', postEnd: '', weekly: true, prior: 0.01, niter: 1000, seed: 1, framing: blankFraming() });
+const blankVal = () => ({ holdout: 21, valStart: '', plLen: null, plMinHist: null, overlap: false, step: 15, count: 10, shift: null });
+const blankSheet = () => ({ go: '', correction: '', notes: '', frozen: null, deviations: [], prevFreeze: null });
+const newId = () => `t${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+const fresh = () => ({ id: newId(), data: null, design: blankDesign(), covs: {}, val: blankVal(), sheet: blankSheet() });
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if (!s || !s.design) return null;
+    const f = fresh();
+    return { ...f, ...s, id: s.id || f.id, design: { ...f.design, ...s.design, framing: { ...blankFraming(), ...(s.design.framing || {}) } }, val: { ...f.val, ...s.val }, sheet: { ...f.sheet, ...s.sheet } };
+  } catch (e) { return null; }
+}
+let S = loadState() || fresh();
+const R = { holdout: null, placebo: null, analysis: null, sens: null };
+function save() { clearTimeout(save.t); save.t = setTimeout(() => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }, 250); }
+function userPresets() { try { return JSON.parse(localStorage.getItem(PKEY)) || []; } catch (e) { return []; } }
+function setUserPresets(a) { try { localStorage.setItem(PKEY, JSON.stringify(a)); return true; } catch (e) { return false; } }
+
+// ======================================================================
+// Derived values
+// ======================================================================
+const D = () => S.data;
+const idx = (iso) => (S.data && iso ? S.data.dates.indexOf(iso) : -1);
+function periods(src = S.design) {
+  const i0 = idx(src.preStart), i1 = idx(src.preEnd), j0 = idx(src.intervention), j1 = idx(src.postEnd);
+  const ok = i0 >= 0 && i1 >= i0 && j0 > i1 && j1 >= j0;
+  return { i0, i1, j0, j1, ok, nPre: i1 - i0 + 1, nPost: j1 - j0 + 1, gap: j0 - i1 - 1 };
+}
+const selected = (covs = S.covs) => Object.keys(covs).filter((k) => covs[k].on && k !== S.design.kpi && S.data && S.data.cols[k]);
+const modelOptions = (d = S.design) => ({ nseasons: d.weekly ? 7 : 1, priorLevelSd: +d.prior, niter: Math.max(100, +d.niter || 1000), seed: +d.seed || 1 });
+function Xof(names) { const X = {}; for (const n of names) X[n] = S.data.cols[n]; return X; }
+function valCfg(p = periods()) {
+  const v = S.val;
+  const L = Math.max(7, +v.plLen || p.nPost || 7);
+  const rule = Math.max(3 * L, 56);
+  const minHist = v.plMinHist == null || v.plMinHist === '' ? rule : Math.max(3, +v.plMinHist);
+  const stride = v.overlap ? Math.max(1, +v.step || 15) : L;
+  const vs = idx(v.valStart || S.design.preStart);
+  const valPre = [vs >= 0 ? vs : p.i0, p.i1];
+  const wins = [];
+  if (p.ok) { let end = valPre[1]; while (wins.length < (+v.count || 10)) { const start = end - L + 1; if (start - valPre[0] < Math.max(minHist, 3)) break; wins.push([start, end]); end -= stride; } }
+  return { L, rule, minHist, stride, valPre, wins, relaxed: minHist < rule || L !== p.nPost || v.overlap, count: +v.count || 10 };
+}
+const sigModel = () => JSON.stringify([S.data && S.data.hash, { ...S.design, framing: 0 }, selected()]);
+const sigVal = () => sigModel() + JSON.stringify({ ...S.val, shift: 0 });
+
+// ======================================================================
+// Import: CSV / TSV, XLSX (no dependency), pasted cells
+// ======================================================================
+function parseCsv(text) {
+  text = text.replace(/^﻿/, '');
+  const first = text.split(/\r?\n/, 1)[0];
+  const cnt = (c) => first.split(c).length - 1;
+  const delim = ['\t', ';', ','].sort((a, b) => cnt(b) - cnt(a))[0];
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === delim) { row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+    else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return rows.filter((r) => r.some((c) => String(c).trim() !== ''));
+}
+async function unzip(buf) {
+  const dv = new DataView(buf);
+  let e = buf.byteLength - 22;
+  while (e >= 0 && dv.getUint32(e, true) !== 0x06054b50) e--;
+  if (e < 0) throw new Error('Not a valid .xlsx file.');
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+  const files = {}; const td = new TextDecoder();
+  for (let i = 0; i < n; i++) {
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+    const nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lho = dv.getUint32(p + 42, true);
+    files[td.decode(new Uint8Array(buf, p + 46, nl))] = { method, csize, lho };
+    p += 46 + nl + el + cl;
+  }
+  return async (name) => {
+    const f = files[name.replace(/^\//, '')]; if (!f) return null;
+    const ln = dv.getUint16(f.lho + 26, true), le = dv.getUint16(f.lho + 28, true);
+    const data = new Uint8Array(buf, f.lho + 30 + ln + le, f.csize);
+    if (f.method === 0) return td.decode(data);
+    if (typeof DecompressionStream === 'undefined') throw new Error('This browser cannot read .xlsx files. Export the sheet as CSV.');
+    const out = await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer();
+    return td.decode(out);
+  };
+}
+const xml = (s) => new DOMParser().parseFromString(s, 'application/xml');
+const tags = (node, name) => [...node.getElementsByTagName(name)];
+async function readXlsx(buf) {
+  const get = await unzip(buf);
+  const wb = xml(await get('xl/workbook.xml'));
+  const rels = xml((await get('xl/_rels/workbook.xml.rels')) || '<r/>');
+  const relMap = {}; tags(rels, 'Relationship').forEach((r) => { relMap[r.getAttribute('Id')] = r.getAttribute('Target'); });
+  const ssXml = await get('xl/sharedStrings.xml');
+  const shared = ssXml ? tags(xml(ssXml), 'si').map((si) => tags(si, 't').map((t) => t.textContent).join('')) : [];
+  const sheets = tags(wb, 'sheet').map((s) => {
+    const rid = s.getAttribute('r:id') || s.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+    let t = relMap[rid] || ''; t = t.startsWith('/') ? t.slice(1) : 'xl/' + t;
+    return { name: s.getAttribute('name'), path: t };
+  });
+  const readSheet = async (path) => {
+    const doc = xml(await get(path)); const rows = [];
+    for (const r of tags(doc, 'row')) {
+      const ri = (+r.getAttribute('r') || rows.length + 1) - 1; const row = [];
+      for (const c of tags(r, 'c')) {
+        const ref = c.getAttribute('r') || ''; let col = 0;
+        for (const ch of ref.replace(/\d+/g, '')) col = col * 26 + (ch.charCodeAt(0) - 64);
+        col = col ? col - 1 : row.length;
+        const t = c.getAttribute('t'); const v = tags(c, 'v')[0]; let val = '';
+        if (t === 's') val = shared[+(v && v.textContent)] ?? '';
+        else if (t === 'inlineStr') val = tags(c, 't').map((x) => x.textContent).join('');
+        else if (t === 'str' || t === 'b') val = v ? v.textContent : '';
+        else val = v ? Number(v.textContent) : '';
+        row[col] = val;
+      }
+      rows[ri] = row;
+    }
+    return rows.filter(Boolean).map((r) => Array.from(r, (x) => (x === undefined ? '' : x)));
+  };
+  return { sheets, readSheet };
+}
+function parseDate(v) {
+  if (typeof v === 'number' && v > 20000 && v < 80000) return new Date(Date.UTC(1899, 11, 30) + Math.round(v) * DAY).toISOString().slice(0, 10);
+  const s = String(v ?? '').trim(); let m;
+  if ((m = s.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/))) return iso3(+m[1], +m[2], +m[3]);
+  if ((m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/))) return iso3(+m[3], +m[2], +m[1]);
+  if (/^\d{5}(\.\d+)?$/.test(s)) return parseDate(Number(s));
+  return null;
+}
+function iso3(y, m, d) { if (m < 1 || m > 12 || d < 1 || d > 31) return null; const dt = new Date(Date.UTC(y, m - 1, d)); return dt.getUTCDate() === d ? dt.toISOString().slice(0, 10) : null; }
+function parseNum(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v ?? '').replace(/[\s  ]/g, '').replace(/[%€$£]/g, '');
+  if (s === '' || s === '-') return NaN;
+  if (s.includes(',') && s.includes('.')) s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+  else if (s.includes(',')) s = s.replace(',', '.');
+  return /^[-+]?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(s) ? Number(s) : NaN;
+}
+function buildDataset(rows, source) {
+  if (!rows || rows.length < 3) throw new Error('The table needs a header row and at least two data rows.');
+  const header = rows[0].map((h, j) => String(h ?? '').trim().normalize('NFC') || `Column ${j + 1}`);
+  const body = rows.slice(1);
+  const share = (j, f) => { let ok = 0, tot = 0; for (const r of body) { const v = r[j]; if (v === '' || v == null) continue; tot++; if (f(v)) ok++; } return tot ? ok / tot : 0; };
+  let dj = header.findIndex((h, j) => /^(date|day|jour|ds)$/i.test(h) && share(j, (v) => parseDate(v)) > 0.9);
+  if (dj < 0) dj = header.findIndex((h, j) => share(j, (v) => parseDate(v)) > 0.9);
+  if (dj < 0) throw new Error('No date column found. Dates must be ISO (2026-03-29), dd/mm/yyyy or Excel dates.');
+  const numCols = [], skipped = [];
+  header.forEach((h, j) => { if (j === dj) return; if (share(j, (v) => isNum(parseNum(v))) >= 0.8) numCols.push(j); else skipped.push(h); });
+  if (!numCols.length) throw new Error('No numeric column found next to the date column.');
+  let recs = []; let badDates = 0;
+  for (const r of body) { const d = parseDate(r[dj]); if (!d) { badDates++; continue; } recs.push({ d, r }); }
+  recs.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : 0));
+  const dups = []; const seen = new Set();
+  recs = recs.filter((x) => { if (seen.has(x.d)) { dups.push(x.d); return false; } seen.add(x.d); return true; });
+  const dates = recs.map((x) => x.d);
+  const names = numCols.map((j) => header[j]);
+  const cols = {};
+  numCols.forEach((j, k) => { cols[names[k]] = recs.map((x) => parseNum(x.r[j])); });
+  const data = { dates, names, cols, source, dateColumn: header[dj], skipped, dups, badDates };
+  data.hash = hashStr(JSON.stringify([dates, names.map((n) => cols[n])]));
+  return data;
+}
+function setData(data) {
+  const same = S.data && S.data.hash === data.hash;
+  S.data = data;
+  if (!same) {
+    S.design = { ...blankDesign(), framing: S.design.framing };
+    S.design.kpi = data.names[0];
+    S.design.preStart = data.dates[0];
+    S.design.postEnd = data.dates[data.dates.length - 1];
+    S.covs = {}; for (const n of data.names) S.covs[n] = { on: false, cat: '', status: 'Not reviewed' };
+    S.val = blankVal();
+    S.sheet = { ...blankSheet(), notes: S.sheet.notes };
+    S.id = newId();
+    clearResults();
+  }
+  save();
+}
+function clearResults() { R.holdout = R.placebo = R.analysis = R.sens = null; }
+
+// ======================================================================
+// Quality control
+// ======================================================================
+let qcCache = { h: null, v: null };
+function spikes(a) {
+  const n = a.length, res = new Array(n).fill(NaN);
+  for (let i = 0; i < n; i++) {
+    if (!isNum(a[i])) continue;
+    const w = []; for (let k = Math.max(0, i - 3); k <= Math.min(n - 1, i + 3); k++) if (isNum(a[k])) w.push(a[k]);
+    res[i] = a[i] - median(w);
+  }
+  const absr = res.filter(isNum).map(Math.abs);
+  const sd = 1.4826 * median(absr);
+  if (!(sd > 0)) return null;
+  const out = []; for (let i = 0; i < n; i++) if (isNum(res[i]) && Math.abs(res[i]) > 4 * sd) out.push(i);
+  return out;
+}
+function qc() {
+  const d = S.data; if (!d) return null;
+  if (qcCache.h === d.hash) return qcCache.v;
+  let gaps = 0; const gapList = [];
+  for (let i = 1; i < d.dates.length; i++) { const g = dayDiff(d.dates[i - 1], d.dates[i]); if (g > 1) { gaps += g - 1; gapList.push([d.dates[i - 1], d.dates[i], g - 1]); } }
+  const cols = {};
+  for (const n of d.names) {
+    const a = d.cols[n]; const fin = a.filter(isNum);
+    const zeros = fin.filter((v) => v === 0).length; const distinct = new Set(fin).size;
+    cols[n] = { missing: a.length - fin.length, zeros, zeroShare: fin.length ? zeros / fin.length : 0, distinct, constant: distinct <= 1, allZero: fin.length > 0 && zeros === fin.length, spikes: spikes(a) };
+  }
+  qcCache = { h: d.hash, v: { gaps, gapList, cols } };
+  return qcCache.v;
+}
+function colFlags(c) {
+  const f = [];
+  if (c.missing) f.push(['flag', `${c.missing} missing`]);
+  if (c.allZero) f.push(['flag', 'all zeros']); else if (c.constant) f.push(['flag', 'constant']);
+  else if (c.zeroShare >= 0.3) f.push(['flag', `${Math.round(c.zeroShare * 100)}% zeros`]);
+  else if (c.zeros) f.push(['', `${c.zeros} zeros`]);
+  if (c.spikes && c.spikes.length) f.push(['flag', `${c.spikes.length} isolated spike${c.spikes.length > 1 ? 's' : ''}`]);
+  if (!c.constant && c.distinct <= 3) f.push(['flag', `${c.distinct} distinct values`]);
+  return f;
+}
+const chips = (f) => (f.length ? f.map(([c, t]) => `<span class="chip ${c}">${esc(t)}</span>`).join('') : '<span class="chip ok">clean</span>');
+
+// ======================================================================
+// Worker (engine copied unchanged, run as a module worker; classic fallback)
+// ======================================================================
+const engineSrc = $('#engine-src').textContent;
+const handlerSrc = $('#worker-src').textContent;
+let worker = null, jobId = 0, busy = null; const pending = new Map();
+function spawn(classic) {
+  const src = classic ? (engineSrc + '\n' + handlerSrc).replace(/^export /gm, '') : engineSrc + '\n' + handlerSrc;
+  const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+  const w = classic ? new Worker(url) : new Worker(url, { type: 'module' });
+  w.onmessage = (ev) => {
+    const m = ev.data; const job = pending.get(m.id); if (!job) return;
+    if ('progress' in m) { job.onProgress && job.onProgress(m.progress); return; }
+    pending.delete(m.id);
+    m.ok ? job.resolve(m.out) : job.reject(new Error(m.error));
+  };
+  w.onerror = (e) => { e.preventDefault && e.preventDefault(); if (!classic && !w._alive) { w.terminate(); worker = spawn(true); retryPending(); } };
+  return w;
+}
+function retryPending() { for (const [id, job] of pending) worker.postMessage({ id, task: job.task, p: job.p }); }
+function call(task, p, onProgress) {
+  return new Promise((resolve, reject) => { const id = ++jobId; pending.set(id, { resolve, reject, onProgress, task, p }); worker.postMessage({ id, task, p }); });
+}
+worker = spawn(false);
+call('version', {}).then((v) => { worker._alive = true; $('#engv').textContent = `Engine ${v} · R CausalImpact defaults`; }).catch(() => { $('#engv').textContent = 'Engine unavailable'; });
+async function job(label, task, p) {
+  if (busy) { toast('Another computation is running.'); return null; }
+  busy = label; status(label, 0, true); refreshButtons();
+  const t0 = performance.now();
+  try {
+    const out = await call(task, p, (f) => status(label, f, true));
+    status(`${label}: done in ${((performance.now() - t0) / 1000).toFixed(1)} s`, null, false, true);
+    return out;
+  } catch (e) {
+    if (e.message !== 'cancelled') status(`${label} failed: ${e.message}`, null, false);
+    return null;
+  } finally { busy = null; refreshButtons(); }
+}
+$('#cancelJob').addEventListener('click', () => {
+  worker.terminate(); for (const [, j] of pending) j.reject(new Error('cancelled')); pending.clear();
+  worker = spawn(false); call('version', {}).then(() => { worker._alive = true; });
+  busy = null; status('Computation cancelled.', null, false); refreshButtons();
+});
+function refreshButtons() { $$('[data-run]').forEach((b) => { b.disabled = !!busy || b.dataset.block === '1'; }); }
+
+// ======================================================================
+// Status bar, downloads, clipboard
+// ======================================================================
+let statusTimer;
+function status(text, frac, running, autoHide) {
+  const el = $('#status'); el.hidden = false; $('#statusText').textContent = text;
+  $('#progWrap').hidden = !running; $('#cancelJob').hidden = !running;
+  if (running) $('#progBar').style.width = frac ? `${Math.round(frac * 100)}%` : '8%';
+  clearTimeout(statusTimer); if (autoHide) statusTimer = setTimeout(() => { el.hidden = true; }, 5000);
+}
+const toast = (t) => status(t, null, false, true);
+$('#closeStatus').addEventListener('click', () => { $('#status').hidden = true; });
+const hasClaude = () => typeof window.claude === 'object' && window.claude && typeof window.claude.use === 'function';
+async function saveFile(filename, data) {
+  if (hasClaude()) {
+    const dl = await window.claude.use('downloads');
+    if (!dl) { toast('Downloads are not available in this view. Use Copy where offered.'); return; }
+    try { await dl.save({ filename, data }); toast(`Saved ${filename}`); }
+    catch (e) {
+      const c = e && e.code;
+      toast(c === 'declined' ? 'Download declined.' : c === 'rate_limited' ? 'A download prompt is already open. Try again in a moment.' : c === 'host_unavailable' ? 'This app cannot save files. Open the tool in a browser to save it.' : `Download unavailable (${c || 'error'}).`);
+    }
+    return;
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data])); a.download = filename; document.body.append(a); a.click(); a.remove();
+}
+async function copyText(t) { try { await navigator.clipboard.writeText(t); toast('Copied to clipboard.'); } catch (e) { toast('Copy refused by the browser.'); } }
+function colors() {
+  const p = document.createElement('span'); document.body.append(p); const out = {};
+  for (const k of ['ink', 'muted', 'line', 'accent', 'band', 'shade', 'flag', 'grid', 'bg']) { p.style.color = `var(--${k})`; out[k] = getComputedStyle(p).color; }
+  p.remove(); return out;
+}
+async function figsToPng(ids, filename, title) {
+  const svgs = ids.map((id) => document.getElementById(id)?.querySelector('svg')).filter(Boolean);
+  if (!svgs.length) return;
+  const C = colors(); const scale = 2; const pad = 16; const head = title ? 34 : 0;
+  const w = Math.max(...svgs.map((s) => s.width.baseVal.value));
+  const h = svgs.reduce((t, s) => t + s.height.baseVal.value, 0) + head + pad * 2;
+  const cv = document.createElement('canvas'); cv.width = (w + pad * 2) * scale; cv.height = h * scale;
+  const cx = cv.getContext('2d'); cx.scale(scale, scale); cx.fillStyle = C.bg; cx.fillRect(0, 0, w + pad * 2, h);
+  if (title) { cx.fillStyle = C.ink; cx.font = '600 15px Inter, Arial, sans-serif'; cx.fillText(title, pad, pad + 16); }
+  let y = pad + head;
+  for (const s of svgs) {
+    const clone = s.cloneNode(true); clone.querySelectorAll('.hit,.xh').forEach((n) => n.remove());
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const img = new Image(); const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone));
+    await new Promise((ok, ko) => { img.onload = ok; img.onerror = ko; img.src = src; });
+    cx.drawImage(img, pad, y); y += s.height.baseVal.value;
+  }
+  const blob = await new Promise((r) => cv.toBlob(r, 'image/png'));
+  await saveFile(filename, blob);
+}
+
+// ======================================================================
+// Charts (SVG at real pixel size, crosshair tooltip)
+// ======================================================================
+const ro = new ResizeObserver((ents) => { for (const en of ents) drawChart(en.target); });
+function mount(id, spec) { const el = document.getElementById(id); if (!el) return; el._spec = spec; ro.observe(el); drawChart(el); }
+function niceTicks(lo, hi, k) {
+  const raw = (hi - lo) / k; const p = 10 ** Math.floor(Math.log10(raw)); const f = raw / p;
+  const step = (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+  const out = []; for (let v = Math.floor(lo / step) * step; v <= hi + step * 0.001; v += step) out.push(+v.toFixed(10));
+  return out;
+}
+const fTick = (v) => (Math.abs(v) >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.abs(v) >= 1000 ? (v / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : Math.abs(v) < 1 && v !== 0 ? v.toFixed(2) : String(+v.toFixed(1)));
+function drawChart(el) {
+  const sp = el._spec; if (!sp) return;
+  const W = el.clientWidth, H = el.clientHeight; if (W < 20 || H < 20) return;
+  const C = colors(); const narrow = W < 520;
+  const m = { l: 46, r: 10, t: 10, b: 22 }; const n = sp.n;
+  const xs = (i) => m.l + (n <= 1 ? 0 : (i * (W - m.l - m.r)) / (n - 1));
+  let lo = Infinity, hi = -Infinity;
+  const take = (a) => { for (const v of a) if (isNum(v)) { if (v < lo) lo = v; if (v > hi) hi = v; } };
+  sp.layers.forEach((L) => { if (L.y) take(L.y); if (L.lo) { take(L.lo); take(L.hi); } });
+  if (sp.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  if (!isNum(lo)) { lo = 0; hi = 1; } if (!(hi > lo)) hi = lo + 1;
+  const ticks = niceTicks(lo, hi, narrow ? 3 : 4); lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]);
+  const ys = (v) => m.t + ((hi - v) * (H - m.t - m.b)) / (hi - lo);
+  const f1 = (v) => v.toFixed(1);
+  let g = '';
+  (sp.shades || []).forEach((s) => { g += `<rect x="${f1(xs(s.a) - 0.5)}" y="${m.t}" width="${f1(Math.max(1, xs(s.b) - xs(s.a) + 1))}" height="${H - m.t - m.b}" fill="${C.shade}"/>`; });
+  ticks.forEach((t) => { g += `<line x1="${m.l}" x2="${W - m.r}" y1="${f1(ys(t))}" y2="${f1(ys(t))}" stroke="${C.grid}"/><text x="${m.l - 6}" y="${f1(ys(t) + 4)}" text-anchor="end" font-size="11" fill="${C.muted}">${esc(fTick(t))}</text>`; });
+  if (sp.zero) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${f1(ys(0))}" y2="${f1(ys(0))}" stroke="${C.muted}" stroke-width="1"/>`;
+  const nx = narrow ? 3 : 6;
+  for (let k = 0; k < nx; k++) {
+    const i = Math.round((k * (n - 1)) / (nx - 1)); const anchor = k === 0 ? 'start' : k === nx - 1 ? 'end' : 'middle';
+    g += `<text x="${f1(xs(i))}" y="${H - 5}" text-anchor="${anchor}" font-size="11" fill="${C.muted}">${esc(fShort(sp.dates[i]))}</text>`;
+  }
+  const segs = (ok) => { const out = []; let cur = null; for (let i = 0; i < n; i++) { if (ok(i)) { if (!cur) out.push(cur = []); cur.push(i); } else cur = null; } return out; };
+  for (const L of sp.layers) {
+    const col = L.color === 'accent' ? C.accent : L.color === 'muted' ? C.muted : C.ink;
+    if (L.lo) {
+      for (const s of segs((i) => isNum(L.lo[i]) && isNum(L.hi[i]))) {
+        const d = s.map((i, k) => `${k ? 'L' : 'M'}${f1(xs(i))},${f1(ys(L.hi[i]))}`).join('') + [...s].reverse().map((i) => `L${f1(xs(i))},${f1(ys(L.lo[i]))}`).join('') + 'Z';
+        g += `<path d="${d}" fill="${C.band}" stroke="none"/>`;
+      }
+    } else {
+      for (const s of segs((i) => isNum(L.y[i]))) {
+        g += `<path d="${s.map((i, k) => `${k ? 'L' : 'M'}${f1(xs(i))},${f1(ys(L.y[i]))}`).join('')}" fill="none" stroke="${col}" stroke-width="${L.w || 1.6}" ${L.dash ? 'stroke-dasharray="5 4"' : ''} stroke-linejoin="round"/>`;
+      }
+    }
+  }
+  (sp.marks || []).forEach((i) => { if (isNum(sp.markY[i])) g += `<circle cx="${f1(xs(i))}" cy="${f1(ys(sp.markY[i]))}" r="4" fill="none" stroke="${C.flag}" stroke-width="2"/>`; });
+  (sp.vlines || []).forEach((i) => { if (i > 0 && i < n) { const x = (xs(i - 1) + xs(i)) / 2; g += `<line x1="${f1(x)}" x2="${f1(x)}" y1="${m.t}" y2="${H - m.b}" stroke="${C.ink}" stroke-dasharray="3 3" stroke-width="1"/>`; } });
+  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Inter, Arial, sans-serif"><rect width="${W}" height="${H}" fill="none"/>${g}<line class="xh" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="${C.muted}" visibility="hidden"/><rect class="hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent"/></svg><div class="tip" hidden></div>`;
+  const svg = el.firstChild, tip = el.lastChild, xh = svg.querySelector('.xh');
+  const move = (ev) => {
+    const r = svg.getBoundingClientRect(); const x = ev.clientX - r.left;
+    const i = Math.max(0, Math.min(n - 1, Math.round(((x - m.l) / (W - m.l - m.r)) * (n - 1))));
+    xh.setAttribute('x1', xs(i)); xh.setAttribute('x2', xs(i)); xh.setAttribute('visibility', 'visible');
+    const rows = sp.tip(i).filter((t) => t);
+    tip.innerHTML = `<b>${esc(fDate(sp.dates[i]))}</b>` + rows.map(([k, v]) => `<div>${esc(k)}: ${esc(v)}</div>`).join('');
+    tip.hidden = false;
+    const tw = tip.offsetWidth; tip.style.left = `${Math.min(W - tw - 4, Math.max(4, xs(i) + 12 + tw > W ? xs(i) - tw - 12 : xs(i) + 12))}px`; tip.style.top = `${m.t + 4}px`;
+  };
+  svg.addEventListener('pointermove', move); svg.addEventListener('pointerleave', () => { tip.hidden = true; xh.setAttribute('visibility', 'hidden'); });
+}
+function spark(a, iv, i0 = 0, i1 = a.length - 1) {
+  const W = 150, H = 28; const seg = a.slice(i0, i1 + 1); const fin = seg.filter(isNum);
+  if (!fin.length) return '';
+  const lo = Math.min(...fin), hi = Math.max(...fin), rg = hi - lo || 1; const n = seg.length;
+  const pts = seg.map((v, k) => (isNum(v) ? `${((k * W) / Math.max(1, n - 1)).toFixed(1)},${(H - 2 - ((v - lo) * (H - 4)) / rg).toFixed(1)}` : null)).filter(Boolean).join(' ');
+  const x = iv >= i0 && iv <= i1 ? (((iv - i0) * W) / Math.max(1, n - 1)).toFixed(1) : null;
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.2" vector-effect="non-scaling-stroke"/>${x ? `<line class="iv" x1="${x}" x2="${x}" y1="0" y2="${H}" stroke-width="1.5" vector-effect="non-scaling-stroke"/>` : ''}</svg>`;
+}
+
+// ======================================================================
+// Protocol flags (shown on Design, Validation and the Test sheet)
+// ======================================================================
+function protocolFlags() {
+  const out = []; if (!S.data) return out;
+  const p = periods(); const sel = selected();
+  if (!p.ok) { out.push(['warn', 'Periods are incomplete or inconsistent.']); return out; }
+  out.push(p.nPre >= 3 * p.nPost ? ['pass', `Pre-period ${p.nPre} days, at least 3 × post-period (${3 * p.nPost} days).`] : ['warn', `Pre-period ${p.nPre} days, shorter than 3 × post-period (${3 * p.nPost} days).`]);
+  if (p.nPre < 56) out.push(['warn', `Pre-period shorter than 8 weeks (${p.nPre} days).`]);
+  if (p.gap > 0) out.push(['info', `${p.gap} day${p.gap > 1 ? 's' : ''} between pre-period end and intervention left out of the fit.`]);
+  if (!S.design.weekly) out.push(['info', 'Weekly seasonality off on daily data.']);
+  const kq = qc().cols[S.design.kpi];
+  const kpiMiss = S.data.cols[S.design.kpi].slice(p.i0, p.j1 + 1).filter((v) => !isNum(v)).length;
+  if (kpiMiss) out.push(['warn', `KPI has ${kpiMiss} missing values inside the analysis range.`]);
+  if (kq && kq.spikes && kq.spikes.some((i) => i >= p.i0 && i <= p.j1)) out.push(['info', 'KPI has isolated spikes inside the analysis range: explain them in the notes.']);
+  if (sel.length) out.push(sel.length > p.nPre / 10 ? ['warn', `${sel.length} covariates for ${p.nPre} pre-period points (guideline: 1 per 10 points).`] : ['pass', `${sel.length} covariates for ${p.nPre} pre-period points.`]);
+  else out.push(['info', 'No covariate selected: the counterfactual is a local level model.']);
+  const by = (s) => sel.filter((n) => S.covs[n].status === s);
+  if (by('Exposed').length) out.push(['warn', `Exposed covariates retained (H-A): ${by('Exposed').join(', ')}.`]);
+  if (by('Doubtful').length) out.push(['info', `Doubtful covariates retained, to clear in sensitivity: ${by('Doubtful').join(', ')}.`]);
+  if (by('Not reviewed').length) out.push(['info', `H-A status not reviewed for ${by('Not reviewed').length} retained covariate${by('Not reviewed').length > 1 ? 's' : ''}.`]);
+  const v = valCfg(p);
+  if (v.valPre[0] !== p.i0) out.push(['info', `Validation history starts on ${fDate(S.data.dates[v.valPre[0]])}, not at the pre-period start.`]);
+  if (v.relaxed) out.push(['warn', `Placebo rule relaxed: windows of ${v.L} days (post-period ${p.nPost}), at least ${v.minHist} days of history (rule ${v.rule})${S.val.overlap ? `, overlapping every ${v.stride} days` : ''}.`]);
+  if (v.wins.length < 4) out.push(['warn', `${v.wins.length} placebo window${v.wins.length === 1 ? '' : 's'} fit the history (protocol: at least 4).`]);
+  const fresh = (r) => r && r.sig === sigVal();
+  if (fresh(R.holdout)) { const h = R.holdout.out; out.push(h.mape > 0.1 ? ['warn', `Hold-out MAPE ${pct(h.mape, 1, false)} (guideline: under 10%), bias ${pct(h.bias)}.`] : ['pass', `Hold-out MAPE ${pct(h.mape, 1, false)}, bias ${pct(h.bias)}.`]); }
+  else out.push(['info', 'Hold-out not run on the current settings.']);
+  if (fresh(R.placebo)) { const pl = R.placebo.out; if (pl.nWindows) out.push(pl.falsePositiveShare > 0.2 ? ['warn', `${pl.nRobust} of ${pl.nWindows} placebos robust (threshold: 1 in 5). The protocol does not read the effect.`] : ['pass', `${pl.nRobust} of ${pl.nWindows} placebos robust (threshold: 1 in 5).`]); }
+  else out.push(['info', 'Placebos not run on the current settings.']);
+  return out;
+}
+const flagList = (f) => `<ul class="flags">${f.map(([c, t]) => `<li class="${c}">${esc(t)}</li>`).join('')}</ul>`;
+
+// ======================================================================
+// Rendering
+// ======================================================================
+const view = $('#view');
+const frozen = () => !!S.sheet.frozen;
+function route() { const h = location.hash.slice(1); return h === 'history' || STEPS.some((s) => s[0] === h) ? h : 'data'; }
+function stepStatus(k) {
+  if (!S.data) return k === 'data' ? ['', 'Import'] : ['', ''];
+  const p = periods();
+  switch (k) {
+    case 'data': return ['st-ok', `${S.data.dates.length} days`];
+    case 'design': return p.ok ? ['st-ok', `${p.nPre} + ${p.nPost} days`] : ['st-warn', 'Set periods'];
+    case 'covariates': return ['', `${selected().length} selected`];
+    case 'validation': return R.placebo || R.holdout ? (R.placebo?.sig === sigVal() || R.holdout?.sig === sigVal() ? ['st-ok', 'Run'] : ['st-warn', 'Stale']) : ['', 'Not run'];
+    case 'sheet': return frozen() ? ['st-ok', 'Frozen'] : ['', 'Draft'];
+    case 'analysis': return R.analysis ? (R.analysis.sig === S.sheet.frozen?.at ? ['st-ok', 'Run'] : ['st-warn', 'Stale']) : ['', frozen() ? 'Ready' : 'Locked'];
+    case 'sensitivity': return R.sens ? (R.sens.sig === S.sheet.frozen?.at + JSON.stringify(S.val.shift) ? ['st-ok', 'Run'] : ['st-warn', 'Stale']) : ['', 'Not run'];
+  }
+  return ['', ''];
+}
+function renderSteps() {
+  const cur = route();
+  $('#steps').innerHTML = STEPS.map(([k, l], i) => { const [c, t] = stepStatus(k); return `<a href="#${k}" class="${k === cur ? 'on' : ''}"><b>${i + 1}. ${l}</b><span class="${c}">${esc(t) || '&nbsp;'}</span></a>`; }).join('');
+}
+function render() {
+  renderSteps(); renderPresets();
+  const r = route();
+  $('#histBtn').classList.toggle('on', r === 'history');
+  if (r === 'history') { vHistory(); return; }
+  if (r !== 'data' && !S.data) { view.innerHTML = `<div class="empty">Import a dataset first. <a href="#data">Go to Data</a></div>`; return; }
+  ({ data: vData, design: vDesign, covariates: vCovs, validation: vVal, sheet: vSheet, analysis: vAnalysis, sensitivity: vSens })[r]();
+  refreshButtons();
+}
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+const lockNote = () => (frozen() ? `<p class="stale">The test sheet is frozen: settings are locked. Amend it on the Test sheet step, with a reason.</p>` : '');
+
+// ---------------- 1. Data
+function vData() {
+  const d = S.data;
+  let h = `<h2>Data</h2><p class="lead">Wide daily table: one date column, one column per series. CSV, Excel or pasted cells, up to 3 years. The quality check runs on import.</p>
+  <div class="grid">
+    <div class="field wide"><div class="drop" id="drop">Drop a .csv or .xlsx file here, or <label class="btn" style="display:inline-flex">Choose file<input type="file" id="file" accept=".csv,.tsv,.txt,.xlsx" hidden></label></div></div>
+    <div class="field wide" id="xlsxPick" hidden></div>
+  </div>
+  <details><summary class="small muted" style="cursor:pointer">Paste a table instead</summary><div class="field" style="margin-top:8px"><textarea id="paste" rows="5" placeholder="Paste cells copied from a spreadsheet (tab separated), header row first"></textarea></div><div class="row"><button type="button" id="pasteGo">Import pasted table</button></div></details>`;
+  if (d) {
+    const q = qc();
+    h += `<div class="sec"><h3>${esc(d.source)}: ${d.dates.length} days, ${fDate(d.dates[0])} to ${fDate(d.dates[d.dates.length - 1])}</h3>
+    <ul class="flags">
+      <li class="${q.gaps ? 'warn' : 'pass'}">${q.gaps ? `${q.gaps} missing calendar day${q.gaps > 1 ? 's' : ''}: ${q.gapList.slice(0, 4).map((g) => `${fShort(g[0])} to ${fShort(g[1])}`).join(', ')}${q.gapList.length > 4 ? '…' : ''}. The model reads rows as consecutive days.` : 'No gap in the daily sequence.'}</li>
+      <li class="${d.dups.length ? 'warn' : 'pass'}">${d.dups.length ? `${d.dups.length} duplicate date${d.dups.length > 1 ? 's' : ''} (first row kept): ${d.dups.slice(0, 5).map(fShort).join(', ')}` : 'No duplicate date.'}</li>
+      ${d.badDates ? `<li class="warn">${d.badDates} row${d.badDates > 1 ? 's' : ''} without a readable date, ignored.</li>` : ''}
+      ${d.skipped.length ? `<li class="info">Non-numeric columns ignored: ${esc(d.skipped.join(', '))}.</li>` : ''}
+      <li class="info">Date column: ${esc(d.dateColumn)}. ${d.names.length} numeric columns. Isolated spike rule: more than 4 robust standard deviations from the centred 7-day median.</li>
+    </ul>
+    <div class="grid"><label class="field"><span>Target KPI</span><select data-k="design.kpi" ${frozen() ? 'disabled' : ''}>${d.names.map((n) => `<option ${n === S.design.kpi ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label></div>
+    <div class="fig" id="kpiFig"></div>
+    <h3>Quality check by column</h3>
+    <div class="scroll"><table><thead><tr><th>Column</th><th class="n">Mean</th><th class="n">Missing</th><th class="n">Zeros</th><th class="n">Distinct</th><th class="n">Spikes</th><th>Flags</th></tr></thead><tbody>
+    ${d.names.map((n) => { const c = q.cols[n]; const fin = d.cols[n].filter(isNum); return `<tr${n === S.design.kpi ? ' class="base"' : ''}><td>${esc(n)}</td><td class="n">${num(mean(fin), 1)}</td><td class="n">${c.missing}</td><td class="n">${c.zeros}</td><td class="n">${c.distinct}</td><td class="n">${c.spikes ? c.spikes.length : 'n/a'}</td><td>${chips(colFlags(c))}</td></tr>`; }).join('')}
+    </tbody></table></div></div>`;
+  }
+  view.innerHTML = h;
+  bindImport();
+  if (d) {
+    const y = d.cols[S.design.kpi]; const sp = qc().cols[S.design.kpi].spikes || [];
+    mount('kpiFig', { n: y.length, dates: d.dates, layers: [{ y, color: 'ink' }], marks: sp, markY: y, tip: (i) => [[S.design.kpi, num(y[i], 1)], sp.includes(i) ? ['Flag', 'isolated spike'] : null] });
+  }
+}
+function importRows(rows, source) {
+  try { setData(buildDataset(rows, source)); toast(`Imported ${S.data.dates.length} days from ${source}.`); render(); }
+  catch (e) { status(`Import failed: ${e.message}`, null, false); }
+}
+async function importFile(f) {
+  try {
+    if (/\.xlsx$/i.test(f.name)) {
+      const x = await readXlsx(await f.arrayBuffer());
+      const go = async (sh) => importRows(await x.readSheet(sh.path), `${f.name} · ${sh.name}`);
+      if (x.sheets.length === 1) return go(x.sheets[0]);
+      const box = $('#xlsxPick'); box.hidden = false;
+      box.innerHTML = `<span>Workbook sheets</span><div class="row">${x.sheets.map((s, i) => `<button type="button" data-sh="${i}">${esc(s.name)}</button>`).join('')}</div>`;
+      box.querySelectorAll('[data-sh]').forEach((b) => b.addEventListener('click', () => go(x.sheets[+b.dataset.sh])));
+    } else importRows(parseCsv(await f.text()), f.name);
+  } catch (e) { status(`Import failed: ${e.message}`, null, false); }
+}
+function bindImport() {
+  const drop = $('#drop'), file = $('#file');
+  file.addEventListener('change', () => file.files[0] && importFile(file.files[0]));
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) importFile(f); });
+  $('#pasteGo').addEventListener('click', () => { const t = $('#paste').value; if (t.trim()) importRows(parseCsv(t), 'Pasted table'); });
+}
+// ---------------- 2. Design
+function vDesign() {
+  const d = S.design, ds = S.data.dates, p = periods(); const fz = frozen() ? 'disabled' : '';
+  const dateIn = (k, label) => `<label class="field"><span>${label}</span><input type="date" data-k="design.${k}" value="${esc(d[k])}" min="${ds[0]}" max="${ds[ds.length - 1]}" ${fz}></label>`;
+  const fr = d.framing;
+  const ta = (k, label, ph = '') => `<label class="field"><span>${label}</span><textarea data-k="design.framing.${k}" data-live="1" placeholder="${esc(ph)}" ${fz}>${esc(fr[k])}</textarea></label>`;
+  view.innerHTML = `<h2>Design</h2><p class="lead">Periods and model options. The pre-period ends the day before the intervention unless a ramp-up phase must be left out.</p>${lockNote()}
+  <div class="grid">${dateIn('preStart', 'Pre-period start')}${dateIn('preEnd', 'Pre-period end')}${dateIn('intervention', 'Intervention (first day of real exposure)')}${dateIn('postEnd', 'Post-period end')}</div>
+  <p class="small muted">${p.ok ? `Pre-period ${p.nPre} days · post-period ${p.nPost} days${p.gap > 0 ? ` · ${p.gap} days left out before the intervention` : ''}` : 'Set an intervention date inside the data range; the pre-period must end before it.'}</p>
+  <div class="fig" id="designFig"></div>
+  <h3>Model</h3>
+  <div class="grid">
+    <label class="check"><input type="checkbox" data-k="design.weekly" ${d.weekly ? 'checked' : ''} ${fz}>Weekly seasonality (7 days)</label>
+    <label class="field"><span>Level prior</span><select data-k="design.prior" data-num="1" ${fz}><option value="0.01" ${+d.prior === 0.01 ? 'selected' : ''}>0.01 (stable series)</option><option value="0.1" ${+d.prior === 0.1 ? 'selected' : ''}>0.1 (when in doubt)</option></select></label>
+    <label class="field"><span>Iterations</span><input type="number" min="100" step="100" data-k="design.niter" value="${esc(d.niter)}" ${fz}></label>
+    <label class="field"><span>Seed</span><input type="number" min="1" step="1" data-k="design.seed" value="${esc(d.seed)}" ${fz}></label>
+  </div>
+  <p class="small muted">Static regression, spike-and-slab prior, data standardised on the pre-period, as in R CausalImpact.</p>
+  <h3>Protocol checks</h3>${flagList(protocolFlags().slice(0, 6))}
+  <div class="sec"><h3>Framing (optional, frozen with the test sheet)</h3>
+  <div class="grid">${ta('decision', 'Business decision informed', 'Renew wave 3 at the same budget?')}${ta('event', 'Event tested', 'Levers, wave, scope')}${ta('h0', 'H0')}${ta('h1', 'H1', 'Effect independent of seasonality, market demand, competition…')}
+  ${ta('kpi2', 'KPI priority 2')}${ta('kpi3', 'KPI priority 3')}${ta('eventsPre', 'Confounding events, pre-period')}${ta('eventsPost', 'Confounding events, post-period')}${ta('tracking', 'Tracking prerequisites', 'Media vs CRM gap, conversion stability')}
+  <label class="field"><span>Business threshold (relative uplift, %, read on the lower bound)</span><input type="number" step="0.5" data-k="design.framing.threshold" value="${esc(fr.threshold)}" ${fz}></label></div></div>`;
+  const y = S.data.cols[d.kpi]; const sh = [];
+  if (p.i0 >= 0 && p.i1 >= p.i0) sh.push({ a: p.i0, b: p.i1 });
+  mount('designFig', { n: y.length, dates: ds, layers: [{ y, color: 'ink' }], shades: sh, vlines: p.j0 > 0 ? [p.j0] : [], tip: (i) => [[d.kpi, num(y[i], 1)], [i >= p.i0 && i <= p.i1 ? 'Pre-period' : i >= p.j0 && i <= p.j1 ? 'Post-period' : 'Outside', '']] });
+}
+
+// ---------------- 3. Covariates
+function vCovs() {
+  const d = S.data, p = periods(), q = qc(); const fz = frozen() ? 'disabled' : '';
+  const ky = d.cols[S.design.kpi];
+  const cands = d.names.filter((n) => n !== S.design.kpi);
+  const stats = {};
+  for (const n of cands) {
+    const a = d.cols[n];
+    const pre = p.ok ? a.slice(p.i0, p.i1 + 1) : a; const post = p.ok ? a.slice(p.j0, p.j1 + 1) : [];
+    const mp = mean(pre.filter(isNum)), mq = post.length ? mean(post.filter(isNum)) : NaN;
+    stats[n] = { r: p.ok ? corr(pre, ky.slice(p.i0, p.i1 + 1)) : NaN, ratio: mp ? mq / mp : NaN, distinctPre: new Set(pre.filter(isNum)).size };
+  }
+  const medRatio = median(cands.map((n) => stats[n].ratio).filter(isNum));
+  const kpiRatio = p.ok ? mean(ky.slice(p.j0, p.j1 + 1)) / mean(ky.slice(p.i0, p.i1 + 1)) : NaN;
+  const sel = selected();
+  view.innerHTML = `<h2>Covariates</h2><p class="lead">You draw up the list. For each candidate: category, H-A status (can the intervention move this series?) and a visual check for a level jump at the intervention date.</p>${lockNote()}
+  <div class="tiles"><div class="tile"><div class="k">Selected</div><div class="v">${sel.length}</div></div><div class="tile"><div class="k">Pre-period points</div><div class="v">${p.ok ? p.nPre : 'n/a'}</div></div><div class="tile"><div class="k">Guideline (1 per 10 points)</div><div class="v">${p.ok ? Math.floor(p.nPre / 10) : 'n/a'}</div></div><div class="tile"><div class="k">Post / pre ratio, median · KPI</div><div class="v">${num(medRatio, 2)} · ${num(kpiRatio, 2)}</div></div></div>
+  <div class="row"><button type="button" id="covNone" ${fz}>Clear selection</button><span class="small muted">Bias: an exposed covariate pushed up by the action raises the counterfactual and underestimates the uplift.</span></div>
+  <div class="scroll"><table><thead><tr><th>Use</th><th>Column</th><th>Category</th><th>H-A status</th><th class="n">Corr. pre</th><th class="n">Post / pre</th><th class="n">Distinct pre</th><th>Flags</th><th>Series, intervention marked</th></tr></thead><tbody>
+  ${cands.map((n) => { const c = S.covs[n] || { on: false, cat: '', status: 'Not reviewed' }; const st = stats[n]; const off = isNum(st.ratio) && isNum(medRatio) && medRatio && Math.abs(st.ratio / medRatio - 1) > 0.2;
+    return `<tr class="${c.on && c.status === 'Exposed' ? 'warnrow' : ''}"><td><input type="checkbox" data-cov="${esc(n)}" data-f="on" ${c.on ? 'checked' : ''} ${fz} aria-label="Use ${esc(n)}" style="width:18px;height:18px;accent-color:var(--accent)"></td><td>${esc(n)}</td>
+    <td><select data-cov="${esc(n)}" data-f="cat" ${fz}>${CATEGORIES.map((x) => `<option value="${esc(x)}" ${x === c.cat ? 'selected' : ''}>${x || 'Choose'}</option>`).join('')}</select></td>
+    <td><select data-cov="${esc(n)}" data-f="status" ${fz}>${STATUSES.map((x) => `<option ${x === c.status ? 'selected' : ''}>${x}</option>`).join('')}</select></td>
+    <td class="n">${num(st.r, 2)}</td><td class="n">${off ? `<span class="chip flag">${num(st.ratio, 2)}</span>` : num(st.ratio, 2)}</td><td class="n">${st.distinctPre}</td><td>${chips(colFlags(q.cols[n]))}</td><td>${spark(d.cols[n], p.j0)}</td></tr>`; }).join('')}
+  </tbody></table></div><p class="small muted">Post / pre ratio highlighted when more than 20% away from the median of all columns. Constant series over the pre-period are dropped by the engine.</p>`;
+  $('#covNone') && $('#covNone').addEventListener('click', () => { for (const n of Object.keys(S.covs)) S.covs[n].on = false; changed(); });
+}
+
+// ---------------- 4. Validation
+function vVal() {
+  const p = periods(); const v = S.val; const c = valCfg(p); const fz = frozen() ? 'disabled' : '';
+  if (!p.ok) { view.innerHTML = `<div class="empty">Set the periods on the Design step first. <a href="#design">Go to Design</a></div>`; return; }
+  const ds = S.data.dates;
+  const st = (r) => (r ? (r.sig === sigVal() ? '' : '<span class="stale">Stale: settings changed since this run.</span>') : '');
+  let h = `<h2>Validation</h2><p class="lead">Check the counterfactual before reading any effect: hold-out fit on the end of the pre-period, placebos on fake intervention dates, and power from the same fits.</p>${lockNote()}
+  <div class="grid">
+    <label class="field"><span>Hold-out length (days)</span><input type="number" min="7" step="1" data-k="val.holdout" value="${esc(v.holdout)}" ${fz}></label>
+    <label class="field"><span>Validation history start</span><input type="date" data-k="val.valStart" value="${esc(v.valStart || S.design.preStart)}" min="${ds[0]}" max="${esc(S.design.preEnd)}" ${fz}></label>
+    <label class="field"><span>Placebo window (days, post-period ${p.nPost})</span><input type="number" min="7" step="1" data-k="val.plLen" value="${esc(v.plLen ?? p.nPost)}" ${fz}></label>
+    <label class="field"><span>Minimum history before a window (rule ${c.rule})</span><input type="number" min="3" step="1" data-k="val.plMinHist" value="${esc(v.plMinHist ?? c.rule)}" ${fz}></label>
+    <label class="check"><input type="checkbox" data-k="val.overlap" ${v.overlap ? 'checked' : ''} ${fz}>Allow overlapping windows</label>
+    <label class="field"><span>Step between windows (days)</span><input type="number" min="1" step="1" data-k="val.step" value="${esc(v.step)}" ${v.overlap ? '' : 'disabled'} ${fz}></label>
+    <label class="field"><span>Maximum windows</span><input type="number" min="1" max="30" step="1" data-k="val.count" value="${esc(v.count)}" ${fz}></label>
+  </div>
+  <p class="small">${c.wins.length} window${c.wins.length === 1 ? '' : 's'} fit: ${c.wins.length ? c.wins.map(([a, b]) => `${fShort(ds[a])} to ${fShort(ds[b])}`).join(' · ') : 'none with these settings. Shorten the window, lower the minimum history, allow overlap or start the validation history earlier.'}</p>
+  ${c.relaxed ? '<p class="small stale">Relaxed placebo rule: written in the test sheet.</p>' : ''}
+  <div class="row"><button type="button" class="primary" data-run id="runAll">Run hold-out and placebos</button><button type="button" data-run id="runHold">Hold-out only</button><button type="button" data-run id="runPl" data-block="${c.wins.length ? 0 : 1}">Placebos and power only</button></div>
+  <div class="sec"><h3>Hold-out: last ${esc(v.holdout)} days of the pre-period</h3>${st(R.holdout)}`;
+  if (R.holdout) {
+    const o = R.holdout.out;
+    h += `<div class="tiles"><div class="tile"><div class="k">MAPE (guideline under 10%)</div><div class="v">${pct(o.mape, 1, false)}</div></div><div class="tile"><div class="k">Points inside the 95% interval</div><div class="v">${pct(o.coverage, 0, false)}</div></div><div class="tile"><div class="k">Bias (observed vs predicted)</div><div class="v">${pct(o.bias)}</div></div><div class="tile"><div class="k">Confidence of a fake effect</div><div class="v">${pct(o.probCausal, 1, false)}</div></div></div>
+    <div class="fig" id="holdFig"></div><div class="row"><button type="button" id="holdPng">PNG</button></div>`;
+  } else h += `<p class="muted small">Not run.</p>`;
+  h += `</div><div class="sec"><h3>Placebos and power</h3>${st(R.placebo)}`;
+  if (R.placebo) {
+    const o = R.placebo.out;
+    h += o.nWindows ? `<p>${o.nRobust} of ${o.nWindows} placebos robust (threshold: 1 in 5, protocol 4.2). MDE: ${o.mde == null ? 'above 20%' : (o.mdeAtGridFloor ? 'at or below ' : '') + pct(o.mde, 0)} (smallest uplift detected in at least 8 of 10 windows).</p>
+    <div class="scroll"><table><thead><tr><th>Window</th><th class="n">History (days)</th><th class="n">Rel. effect</th><th class="n">95% interval</th><th class="n">Confidence</th><th>Band</th><th class="n">MAPE</th></tr></thead><tbody>
+    ${o.placebos.map((x) => `<tr class="${x.band === 'robust' ? 'warnrow' : ''}"><td>${fShort(ds[x.window[0]])} to ${fShort(ds[x.window[1]])}</td><td class="n">${x.trainLength}</td><td class="n">${pct(x.relEffect)}</td><td class="n">[${pct(x.relEffectLower)} ; ${pct(x.relEffectUpper)}]</td><td class="n">${pct(x.probCausal, 1, false)}</td><td>${bandName(x.band)}</td><td class="n">${pct(x.mape, 1, false)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <h3>Detection of injected uplifts</h3><div class="scroll"><table style="max-width:520px"><thead><tr><th>Injected uplift</th><th class="n">Windows detected</th><th></th></tr></thead><tbody>${o.detection.map((x) => `<tr><td>${pct(x.uplift, 0)}</td><td class="n">${pct(x.share, 0, false)}</td><td><span class="bar-in"><i style="width:${Math.round((x.share || 0) * 100)}%"></i></span></td></tr>`).join('')}</tbody></table></div>
+    <div class="row"><button type="button" id="plCsv">CSV</button></div>` : `<p class="muted small">No window was run.</p>`;
+  } else h += `<p class="muted small">Not run.</p>`;
+  h += `</div><div class="sec"><h3>Protocol checks</h3>${flagList(protocolFlags())}</div>`;
+  view.innerHTML = h;
+  $('#runAll').addEventListener('click', async () => { await runHoldout(); if (valCfg().wins.length) await runPlacebos(); });
+  $('#runHold').addEventListener('click', runHoldout);
+  $('#runPl').addEventListener('click', runPlacebos);
+  if (R.holdout) {
+    const o = R.holdout.out; const s = o.series; const base = s[0].index;
+    mount('holdFig', { n: s.length, dates: s.map((x) => ds[x.index]), layers: [{ lo: s.map((x) => x.predLower), hi: s.map((x) => x.predUpper) }, { y: s.map((x) => x.pred), color: 'accent', dash: true }, { y: s.map((x) => x.actual), color: 'ink' }], shades: [{ a: o.window[0] - base, b: o.window[1] - base }], vlines: [o.window[0] - base], tip: (i) => [['Observed', num(s[i].actual, 1)], ['Predicted', num(s[i].pred, 1)], ['95% interval', `${num(s[i].predLower, 1)} to ${num(s[i].predUpper, 1)}`]] });
+    $('#holdPng').addEventListener('click', () => figsToPng(['holdFig'], 'holdout.png', `Hold-out, last ${o.n} days of the pre-period: MAPE ${pct(o.mape, 1, false)}`));
+  }
+  if (R.placebo && $('#plCsv')) $('#plCsv').addEventListener('click', () => {
+    const o = R.placebo.out; const lines = ['window_start,window_end,history_days,rel_effect,rel_lower,rel_upper,confidence,band,mape,' + o.detection.map((x) => `detected_${Math.round(x.uplift * 100)}pct`).join(',')];
+    o.placebos.forEach((x) => lines.push([ds[x.window[0]], ds[x.window[1]], x.trainLength, x.relEffect, x.relEffectLower, x.relEffectUpper, x.probCausal, x.band, x.mape, ...x.power.map((w) => (w.detected ? 1 : 0))].join(',')));
+    saveFile('placebos.csv', lines.join('\n'));
+  });
+}
+async function runHoldout() {
+  const p = periods(); const L = Math.max(3, +S.val.holdout || 21);
+  if (p.nPre - L < 3) { toast('Hold-out longer than the pre-period allows.'); return; }
+  const sig = sigVal();
+  const out = await job('Hold-out', 'holdout', { y: S.data.cols[S.design.kpi], X: Xof(selected()), pre: [p.i0, p.i1], validationLength: L, options: modelOptions() });
+  if (out) { R.holdout = { sig, out }; render(); }
+}
+async function runPlacebos() {
+  const p = periods(); const c = valCfg(p); if (!c.wins.length) return;
+  const sig = sigVal();
+  const out = await job('Placebos and power', 'placebos', { y: S.data.cols[S.design.kpi], X: Xof(selected()), valPre: c.valPre, L: c.L, minHist: c.minHist, stride: c.stride, count: c.count, uplifts: [0.05, 0.1, 0.15, 0.2], options: modelOptions() });
+  if (out) { R.placebo = { sig, out }; render(); }
+}
+
+// ---------------- 5. Test sheet
+function snapshot() {
+  const p = periods(); const c = valCfg(p); const fr = (r) => (r && r.sig === sigVal() ? r.out : null);
+  const h = fr(R.holdout), pl = fr(R.placebo);
+  return {
+    at: new Date().toISOString(), hash: S.data.hash, source: S.data.source,
+    design: JSON.parse(JSON.stringify(S.design)),
+    covs: Object.fromEntries(S.data.names.filter((n) => n !== S.design.kpi).map((n) => [n, { ...S.covs[n] }])),
+    val: { ...S.val, L: c.L, minHist: c.minHist, rule: c.rule, stride: c.stride, valStart: S.data.dates[c.valPre[0]], windows: c.wins.length, relaxed: c.relaxed },
+    holdout: h && { n: h.n, mape: h.mape, coverage: h.coverage, bias: h.bias },
+    placebo: pl && { n: pl.nWindows, robust: pl.nRobust, mde: pl.mde, mdeAtGridFloor: pl.mdeAtGridFloor },
+    flags: protocolFlags(), go: S.sheet.go, correction: S.sheet.correction, notes: S.sheet.notes,
+  };
+}
+function diffSnap(a, b) {
+  const out = [];
+  for (const k of ['kpi', 'preStart', 'preEnd', 'intervention', 'postEnd', 'weekly', 'prior', 'niter', 'seed']) if (String(a.design[k]) !== String(b.design[k])) out.push(`${k}: ${a.design[k]} → ${b.design[k]}`);
+  const sa = Object.keys(a.covs).filter((n) => a.covs[n].on), sb = Object.keys(b.covs).filter((n) => b.covs[n].on);
+  const add = sb.filter((n) => !sa.includes(n)), rem = sa.filter((n) => !sb.includes(n));
+  if (add.length) out.push(`covariates added: ${add.join(', ')}`); if (rem.length) out.push(`covariates removed: ${rem.join(', ')}`);
+  for (const k of ['holdout', 'valStart', 'L', 'minHist', 'overlap', 'step', 'count']) if (String(a.val[k]) !== String(b.val[k])) out.push(`validation ${k}: ${a.val[k]} → ${b.val[k]}`);
+  if (a.hash !== b.hash) out.push('data changed');
+  return out;
+}
+function sheetModel() {
+  const s = S.sheet.frozen || snapshot(); const d = s.design; const p = periods(d); const ds = S.data.dates; const f = d.framing;
+  const on = Object.keys(s.covs).filter((n) => s.covs[n].on); const off = Object.keys(s.covs).filter((n) => !s.covs[n].on);
+  const covTxt = (n) => `${n} (${s.covs[n].cat || 'no category'}, ${s.covs[n].status})`;
+  const rows = [
+    ['Decision informed', f.decision], ['Event tested', f.event], ['H0', f.h0], ['H1', f.h1],
+    ['KPI priority 1', `${d.kpi} · ${s.source} · daily`], ['KPI priority 2', f.kpi2], ['KPI priority 3', f.kpi3],
+    ['Pre-period', p.ok ? `${fDate(d.preStart)} to ${fDate(d.preEnd)} (${p.nPre} days)` : 'incomplete'],
+    ['Post-period', p.ok ? `${fDate(d.intervention)} to ${fDate(d.postEnd)} (${p.nPost} days)` : 'incomplete'],
+    ['Covariates retained', on.length ? on.map(covTxt).join('; ') : 'none'],
+    ['Covariates left out', off.length ? off.map(covTxt).join('; ') : 'none'],
+    ['Model', `Weekly seasonality ${d.weekly ? 'on (7 days)' : 'off'} · level prior ${d.prior} · ${d.niter} iterations · seed ${d.seed} · static regression`],
+    ['Validation settings', `Hold-out ${s.val.holdout} days · history from ${fDate(s.val.valStart)} · placebo windows ${s.val.L} days, min. history ${s.val.minHist} (rule ${s.val.rule})${s.val.overlap ? `, overlap every ${s.val.stride} days` : ''} · ${s.val.windows} windows`],
+    ['Validation results', [s.holdout ? `Hold-out MAPE ${pct(s.holdout.mape, 1, false)}, coverage ${pct(s.holdout.coverage, 0, false)}, bias ${pct(s.holdout.bias)}` : 'Hold-out not run', s.placebo ? `placebos ${s.placebo.robust} robust of ${s.placebo.n}, MDE ${s.placebo.mde == null ? 'above 20%' : (s.placebo.mdeAtGridFloor ? '≤ ' : '') + pct(s.placebo.mde, 0)}` : 'placebos not run'].join(' · ')],
+    ['Confounding events, pre', f.eventsPre], ['Confounding events, post', f.eventsPost], ['Tracking prerequisites', f.tracking],
+    ['Reading criteria', `Grid: Robust ≥ 95% with interval excluding zero · Favorable ≥ 90% · Trend 70% to 90% · Inconclusive < 70%.${f.threshold !== '' && f.threshold != null ? ` Business threshold +${f.threshold}% on the lower bound.` : ''}`],
+    ['Go / No-go', s.go ? `${s.go}${s.go === 'No-go' && s.correction ? `: ${s.correction}` : ''}` : ''],
+    ['Notes', s.notes],
+  ];
+  return { s, rows, ds };
+}
+function sheetMarkdown() {
+  const { s, rows } = sheetModel(); const cell = (t) => String(t || ' ').replace(/\|/g, '\\|').replace(/\n/g, '<br>');
+  let md = `# Causal Impact test sheet\n\n${S.sheet.frozen ? `Frozen on ${s.at.replace('T', ' ').slice(0, 16)} UTC` : 'Draft (not frozen)'} · data fingerprint ${s.hash} · engine ${$('#engv').textContent.split(' ')[1] || ''}\n\n| Field | Content |\n|---|---|\n`;
+  md += rows.map(([k, v]) => `| ${k} | ${cell(v)} |`).join('\n');
+  md += `\n\n## Protocol checks\n\n${s.flags.map(([c, t]) => `- ${c === 'warn' ? '[!] ' : ''}${t}`).join('\n')}\n`;
+  if (S.sheet.deviations.length) md += `\n## Deviation log\n\n${S.sheet.deviations.map((d) => `- ${d.at.slice(0, 16).replace('T', ' ')}: ${d.reason}${d.changes ? ` (${d.changes.join('; ') || 'no parameter change'})` : ''}`).join('\n')}\n`;
+  return md;
+}
+function vSheet() {
+  const fz = frozen(); const { s, rows } = sheetModel();
+  view.innerHTML = `<h2>Test sheet</h2><p class="lead">Filled from the previous steps. Freezing locks the settings, stamps the time and the data fingerprint, and unlocks the analysis. Any later change goes through the deviation log.</p>
+  <div class="tiles"><div class="tile"><div class="k">Status</div><div class="v">${fz ? 'Frozen' : 'Draft'}</div></div><div class="tile"><div class="k">${fz ? 'Frozen on (UTC)' : 'Data fingerprint'}</div><div class="v" style="font-size:17px">${fz ? esc(s.at.replace('T', ' ').slice(0, 16)) : esc(S.data.hash)}</div></div></div>
+  <div class="scroll"><table class="kv"><tbody>${rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v ? esc(v).replace(/\n/g, '<br>') : '<span class="muted">not filled</span>'}</td></tr>`).join('')}</tbody></table></div>
+  <h3>Protocol checks${fz ? ' at freeze' : ''}</h3>${flagList(s.flags)}
+  <div class="sec"><h3>Decision</h3><div class="grid">
+    <label class="field"><span>Go / No-go</span><select data-k="sheet.go" ${fz ? 'disabled' : ''}><option value="">Not decided</option><option ${S.sheet.go === 'Go' ? 'selected' : ''}>Go</option><option ${S.sheet.go === 'No-go' ? 'selected' : ''}>No-go</option></select></label>
+    <label class="field"><span>Correction if no-go</span><textarea data-k="sheet.correction" data-live="1" ${fz ? 'disabled' : ''}>${esc(S.sheet.correction)}</textarea></label>
+    <label class="field wide"><span>Notes</span><textarea data-k="sheet.notes" data-live="1" ${fz ? 'disabled' : ''}>${esc(S.sheet.notes)}</textarea></label></div>
+  <div class="row">${fz ? `<input type="text" id="amendReason" placeholder="Reason for the amendment (required)" style="max-width:420px"><button type="button" id="amend">Unfreeze to amend</button>` : `<button type="button" class="primary" id="freeze">Freeze the test sheet</button>`}
+  <button type="button" id="mdSave">Export Markdown</button><button type="button" id="mdCopy">Copy Markdown</button></div></div>
+  <div class="sec"><h3>Deviation log</h3>${S.sheet.deviations.length ? `<div class="scroll"><table><thead><tr><th>Date (UTC)</th><th>Reason</th><th>Changes at the next freeze</th></tr></thead><tbody>${S.sheet.deviations.map((d) => `<tr><td>${esc(d.at.slice(0, 16).replace('T', ' '))}</td><td>${esc(d.reason)}</td><td>${d.changes ? esc(d.changes.join('; ') || 'none') : '<span class="muted">pending</span>'}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small">No deviation.</p>'}</div>`;
+  $('#freeze') && $('#freeze').addEventListener('click', () => {
+    if (!periods().ok) { toast('Set consistent periods before freezing.'); return; }
+    const snap = snapshot(); const last = S.sheet.deviations[S.sheet.deviations.length - 1];
+    if (last && !last.changes && S.sheet.prevFreeze) last.changes = diffSnap(S.sheet.prevFreeze, snap);
+    S.sheet.frozen = snap; S.sheet.prevFreeze = null; R.analysis = null; R.sens = null; save(); render();
+    histSave().then((ok) => toast(ok ? 'Test sheet frozen and saved to History. The analysis is unlocked.' : 'Test sheet frozen. The analysis is unlocked. This browser could not save it to History.'));
+  });
+  $('#amend') && $('#amend').addEventListener('click', () => {
+    const r = $('#amendReason').value.trim(); if (!r) { toast('Write the reason for the amendment first.'); $('#amendReason').focus(); return; }
+    S.sheet.deviations.push({ at: new Date().toISOString(), reason: r }); S.sheet.prevFreeze = S.sheet.frozen; S.sheet.frozen = null; R.analysis = null; R.sens = null; save(); render();
+  });
+  $('#mdSave').addEventListener('click', () => saveFile('causal-impact-test-sheet.md', sheetMarkdown()));
+  $('#mdCopy').addEventListener('click', () => copyText(sheetMarkdown()));
+}
+
+// ---------------- 6. Analysis
+function frozenRun() {
+  const s = S.sheet.frozen; const d = s.design; const p = periods(d);
+  const names = Object.keys(s.covs).filter((n) => s.covs[n].on && S.data.cols[n]);
+  return { s, d, p, names, payload: { y: S.data.cols[d.kpi], X: Xof(names), pre: [p.i0, p.i1], post: [p.j0, p.j1], options: modelOptions(d), dates: S.data.dates } };
+}
+function vAnalysis() {
+  if (!frozen()) { view.innerHTML = `<h2>Analysis</h2><div class="empty">The analysis runs on a frozen test sheet, so the reading criteria are fixed before the effect is seen. <a href="#sheet">Go to the test sheet</a></div>`; return; }
+  const { d } = frozenRun(); const A = R.analysis && R.analysis.sig === S.sheet.frozen.at ? R.analysis.out : null; const ds = S.data.dates;
+  let h = `<h2>Analysis</h2><p class="lead">${esc(d.kpi)} · intervention ${fDate(d.intervention)} · settings from the sheet frozen on ${esc(S.sheet.frozen.at.replace('T', ' ').slice(0, 16))} UTC.</p>
+  <div class="row"><button type="button" class="primary" data-run id="runA">${A ? 'Run again' : 'Run the analysis'}</button></div>`;
+  if (!A) { view.innerHTML = h + `<div class="empty">Not run yet.</div>`; $('#runA').addEventListener('click', runAnalysis); return; }
+  const sm = A.summary, av = sm.average, cu = sm.cumulative; const thr = d.framing.threshold;
+  h += `<div class="hero"><div><div class="small muted">Relative effect, post-period average</div><div class="big">${pct(av.relEffect)}</div><div>95% interval [${pct(av.relEffectLower)} ; ${pct(av.relEffectUpper)}] · confidence ${pct(sm.probCausal, 1, false)}</div>
+  ${thr !== '' && thr != null ? `<div class="small muted">Lower bound ${pct(av.relEffectLower)} vs business threshold +${esc(thr)}%</div>` : ''}</div>
+  <div><div class="small muted" style="margin-bottom:4px">Confidence grid (legend, not a verdict)</div><div class="legend">${BANDS.map(([k, l, t]) => `<div class="${k === A.band ? 'cur' : ''}"><b>${l}</b>${t}</div>`).join('')}</div></div></div>
+  <h3>Observed, counterfactual, pointwise and cumulative effect</h3>
+  <div class="fig" id="f1"></div><div class="fig s" id="f2"></div><div class="fig s" id="f3"></div>
+  <p class="small muted">Black: observed. Blue dashed: counterfactual prediction with its 95% interval. Dashed vertical line: intervention.</p>
+  <div class="row"><button type="button" id="aPng">PNG</button><button type="button" id="aCsv">CSV results</button><button type="button" id="aR">R script</button><button type="button" id="aIn">Input CSV for R</button><button type="button" id="aRcopy">Copy R script</button><button type="button" id="aGs">Slides for Google Slides</button><button type="button" id="aPpt">Slides for PowerPoint</button></div>
+  <h3>Summary</h3><div class="scroll"><table style="max-width:760px"><thead><tr><th></th><th class="n">Average</th><th class="n">Cumulative</th></tr></thead><tbody>
+  <tr><td>Actual</td><td class="n">${num(av.actual, 1)}</td><td class="n">${num(cu.actual, 0)}</td></tr>
+  <tr><td>Prediction (s.d.)</td><td class="n">${num(av.pred, 1)} (${num(av.predSd, 1)})</td><td class="n">${num(cu.pred, 0)} (${num(cu.predSd, 0)})</td></tr>
+  <tr><td>95% CI</td><td class="n">[${num(av.predLower, 1)} ; ${num(av.predUpper, 1)}]</td><td class="n">[${num(cu.predLower, 0)} ; ${num(cu.predUpper, 0)}]</td></tr>
+  <tr><td>Absolute effect (s.d.)</td><td class="n">${sgn(av.absEffect, 1)} (${num(av.absEffectSd, 1)})</td><td class="n">${sgn(cu.absEffect, 0)} (${num(cu.absEffectSd, 0)})</td></tr>
+  <tr><td>95% CI</td><td class="n">[${sgn(av.absEffectLower, 1)} ; ${sgn(av.absEffectUpper, 1)}]</td><td class="n">[${sgn(cu.absEffectLower, 0)} ; ${sgn(cu.absEffectUpper, 0)}]</td></tr>
+  <tr><td>Relative effect (s.d.)</td><td class="n">${pct(av.relEffect)} (${pct(av.relEffectSd, 1, false)})</td><td class="n">${pct(cu.relEffect)} (${pct(cu.relEffectSd, 1, false)})</td></tr>
+  <tr><td>95% CI</td><td class="n">[${pct(av.relEffectLower)} ; ${pct(av.relEffectUpper)}]</td><td class="n">[${pct(cu.relEffectLower)} ; ${pct(cu.relEffectUpper)}]</td></tr>
+  <tr><td>Posterior tail-area probability p</td><td class="n" colspan="2">${sm.pValue.toFixed(4)}</td></tr>
+  <tr><td>Posterior probability of a causal effect</td><td class="n" colspan="2">${pct(sm.probCausal, 2, false)}</td></tr></tbody></table></div>
+  <h3>Covariates</h3>${A.covariates.length ? `<div class="scroll"><table style="max-width:860px"><thead><tr><th>Covariate</th><th>Inclusion probability</th><th class="n">Coef. (standardised)</th><th class="n">Coef. (original scale)</th></tr></thead><tbody>${[...A.covariates].sort((a, b) => b.inclusionProb - a.inclusionProb).map((c) => `<tr><td>${esc(c.name)}</td><td><span class="bar-in"><i style="width:${Math.round(c.inclusionProb * 100)}%"></i></span>${num(c.inclusionProb, 2)}</td><td class="n">${num(c.coefStd, 3)}</td><td class="n">${num(c.coefOriginal, 4)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small">No covariate in the model.</p>'}
+  ${A.covariatesDropped.length ? `<p class="small">Dropped by the engine: ${A.covariatesDropped.map((x) => `${esc(x.name)} (${esc(x.reason)})`).join(', ')}.</p>` : ''}
+  <h3>Model details</h3><table class="kv" style="max-width:760px"><tbody>
+  <tr><td>Engine</td><td>${esc(A.engine)} · ${A.options.niter} iterations, burn-in ${A.burnIn} · seed ${A.options.seed}</td></tr>
+  <tr><td>Components</td><td>Local level${A.options.nseasons > 1 ? ' + weekly seasonality' : ''} · level prior ${A.options.priorLevelSd} · ${A.covariatesUsed.length} covariates, static spike-and-slab regression</td></tr>
+  <tr><td>Posterior σ (original scale)</td><td>observation ${num(A.sigma.obs, 2)} · level ${num(A.sigma.level, 2)}${A.options.nseasons > 1 ? ` · seasonal ${num(A.sigma.seasonal, 2)}` : ''}</td></tr>
+  <tr><td>Pre-period fit</td><td>MAPE ${pct(A.preFit.mape, 1, false)} · coverage ${pct(A.preFit.coverage, 0, false)} (in-sample)</td></tr>
+  ${d.framing.eventsPost ? `<tr><td>Confounding events, post</td><td>${esc(d.framing.eventsPost)}</td></tr>` : ''}</tbody></table>`;
+  view.innerHTML = h;
+  $('#runA').addEventListener('click', runAnalysis);
+  const s = A.series; const base = s[0].index; const iv = d.intervention ? idx(d.intervention) - base : -1; const dts = s.map((x) => ds[x.index]);
+  const tip = (i) => [['Observed', num(s[i].actual, 1)], ['Predicted', `${num(s[i].pred, 1)} [${num(s[i].predLower, 1)} ; ${num(s[i].predUpper, 1)}]`], ['Pointwise effect', sgn(s[i].effect, 1)], s[i].period === 'post' ? ['Cumulative effect', `${sgn(s[i].cumEffect, 0)} [${sgn(s[i].cumEffectLower, 0)} ; ${sgn(s[i].cumEffectUpper, 0)}]`] : null];
+  const post = (k) => s.map((x) => (x.period === 'post' ? x[k] : NaN));
+  mount('f1', { n: s.length, dates: dts, layers: [{ lo: s.map((x) => x.predLower), hi: s.map((x) => x.predUpper) }, { y: s.map((x) => x.pred), color: 'accent', dash: true }, { y: s.map((x) => x.actual), color: 'ink' }], vlines: [iv], tip });
+  mount('f2', { n: s.length, dates: dts, zero: true, layers: [{ lo: s.map((x) => x.effectLower), hi: s.map((x) => x.effectUpper) }, { y: s.map((x) => x.effect), color: 'accent' }], vlines: [iv], tip });
+  mount('f3', { n: s.length, dates: dts, zero: true, layers: [{ lo: post('cumEffectLower'), hi: post('cumEffectUpper') }, { y: post('cumEffect'), color: 'accent' }], vlines: [iv], tip });
+  const tag = `${d.kpi}_${d.intervention}`.replace(/[^\w-]+/g, '_');
+  $('#aPng').addEventListener('click', () => figsToPng(['f1', 'f2', 'f3'], `causal-impact_${tag}.png`, `${d.kpi}: ${pct(av.relEffect)} [${pct(av.relEffectLower)} ; ${pct(av.relEffectUpper)}], confidence ${pct(sm.probCausal, 1, false)}`));
+  $('#aCsv').addEventListener('click', () => saveFile(`causal-impact_${tag}.csv`, A.csv));
+  const rArgs = { csvFile: 'causal_impact_input.csv', dateColumn: 'date', target: d.kpi, covariates: A.covariatesUsed, preStart: d.preStart, preEnd: d.preEnd, postStart: d.intervention, postEnd: d.postEnd, options: A.options, toolName: 'Causal Impact tool' };
+  $('#aR').addEventListener('click', async () => { const t = await call('rscript', rArgs); saveFile(`causal-impact_${tag}.R`, t); });
+  $('#aGs').addEventListener('click', () => exportSlides('gslides'));
+  $('#aPpt').addEventListener('click', () => exportSlides('ppt'));
+  $('#aRcopy').addEventListener('click', async () => { const t = await call('rscript', rArgs); copyText(t); });
+  $('#aIn').addEventListener('click', () => {
+    const cols = [d.kpi, ...A.covariatesUsed]; const q = (v) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const lines = [['date', ...cols].map(q).join(',')]; S.data.dates.forEach((dt, i) => lines.push([dt, ...cols.map((c) => (isNum(S.data.cols[c][i]) ? S.data.cols[c][i] : ''))].join(',')));
+    saveFile('causal_impact_input.csv', lines.join('\n'));
+  });
+}
+async function runAnalysis() {
+  const { payload } = frozenRun(); const sig = S.sheet.frozen.at;
+  const out = await job('Analysis', 'analysis', payload);
+  if (out) { R.analysis = { sig, out }; render(); histSave(); }
+}
+
+// ---------------- 7. Sensitivity
+function vSens() {
+  if (!frozen()) { view.innerHTML = `<h2>Sensitivity</h2><div class="empty">Sensitivity runs on the frozen test sheet. <a href="#sheet">Go to the test sheet</a></div>`; return; }
+  const { p, names } = frozenRun(); const def = Math.floor(p.nPre / 4); const shift = S.val.shift ?? def;
+  const canShift = p.i1 - (p.i0 + +shift) + 1 >= 56;
+  const sig = S.sheet.frozen.at + JSON.stringify(S.val.shift);
+  const E = R.sens && R.sens.sig === sig ? R.sens.out : null;
+  let h = `<h2>Sensitivity</h2><p class="lead">The result must hold when the debatable choices change: level prior, weekly seasonality, one covariate removed at a time, a later pre-period start. When a variant crosses a threshold of the grid, read at the most prudent level.</p>
+  <div class="grid"><label class="field"><span>Pre-period start shift (days)</span><input type="number" min="1" step="1" data-k="val.shift" value="${esc(shift)}"></label></div>
+  <p class="small ${canShift ? 'muted' : 'stale'}">${canShift ? `The shifted variant starts on ${fDate(S.data.dates[p.i0 + +shift])}.` : `Shifted pre-period variant not run: fewer than 56 days would remain (${p.nPre - shift} days).`} ${names.length} leave-one-out variants.</p>
+  <div class="row"><button type="button" class="primary" data-run id="runS">${E ? 'Run again' : 'Run sensitivity'}</button></div>`;
+  if (E) {
+    const doubt = new Set(names.filter((n) => S.sheet.frozen.covs[n].status === 'Doubtful'));
+    const rows = [...E.rows].sort((a, b) => (a.kind === 'drop' && b.kind === 'drop' ? (doubt.has(b.label.slice(8)) - doubt.has(a.label.slice(8))) : 0));
+    h += `<div class="tiles"><div class="tile"><div class="k">Lowest band</div><div class="v">${bandName(E.lowestBand)}</div></div><div class="tile"><div class="k">Highest band</div><div class="v">${bandName(E.highestBand)}</div></div><div class="tile"><div class="k">Threshold crossed</div><div class="v">${E.crossesThreshold ? 'Yes' : 'No'}</div></div></div>
+    ${E.crossesThreshold ? `<p><b>Read at the most prudent level: ${bandName(E.lowestBand)}.</b></p>` : ''}
+    <div class="scroll"><table><thead><tr><th>Variant</th><th class="n">Rel. effect</th><th class="n">95% interval</th><th class="n">Confidence</th><th>Band</th><th class="n">Cum. effect</th><th class="n">Pre MAPE</th></tr></thead><tbody>
+    ${rows.map((r) => `<tr class="${r.kind === 'base' ? 'base' : ''}"><td>${esc(r.label)}${r.kind === 'drop' && doubt.has(r.label.slice(8)) ? ' <span class="chip">doubtful</span>' : ''}</td><td class="n">${pct(r.relEffect)}</td><td class="n">[${pct(r.relEffectLower)} ; ${pct(r.relEffectUpper)}]</td><td class="n">${pct(r.probCausal, 1, false)}</td><td>${bandName(r.band)}</td><td class="n">${sgn(r.absEffectCum, 0)}</td><td class="n">${pct(r.preMape, 1, false)}</td></tr>`).join('')}
+    </tbody></table></div><div class="row"><button type="button" id="sCsv">CSV</button></div>`;
+  }
+  view.innerHTML = h;
+  $('#runS').addEventListener('click', async () => {
+    const { payload, p: pp } = frozenRun(); const sh = +(S.val.shift ?? Math.floor(pp.nPre / 4));
+    const out = await job('Sensitivity', 'sensitivity', { y: payload.y, X: payload.X, pre: payload.pre, post: payload.post, options: payload.options, preShift: sh });
+    if (out) { R.sens = { sig: S.sheet.frozen.at + JSON.stringify(S.val.shift), out }; render(); }
+  });
+  E && $('#sCsv').addEventListener('click', () => saveFile('sensitivity.csv', ['variant,rel_effect,rel_lower,rel_upper,confidence,band,cum_effect,pre_mape', ...E.rows.map((r) => [`"${r.label.replace(/"/g, '""')}"`, r.relEffect, r.relEffectLower, r.relEffectUpper, r.probCausal, r.band, r.absEffectCum, r.preMape].join(','))].join('\n')));
+}
+
+// ======================================================================
+// Slides export (.pptx, dark grammar, French): test sheet, covariates, result
+// ======================================================================
+const PPTX_URL = 'https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.1/dist/pptxgen.bundle.js';
+let pptxLib = null;
+function loadPptx() {
+  if (window.PptxGenJS) return Promise.resolve(window.PptxGenJS);
+  return (pptxLib = pptxLib || new Promise((ok, ko) => {
+    const s = document.createElement('script'); s.src = PPTX_URL;
+    s.onload = () => (window.PptxGenJS ? ok(window.PptxGenJS) : ko(new Error('PowerPoint library missing')));
+    s.onerror = () => { pptxLib = null; ko(new Error('the PowerPoint library could not load')); };
+    document.head.append(s);
+  }));
+}
+const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+const frD = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+const frShort = (iso) => { const [, m, d] = iso.split('-'); return `${+d} ${MOIS[+m - 1]}`; };
+const fr = (x, d = 0) => (!isNum(x) ? 'n/d' : x.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d }).replace(/ /g, ' '));
+const frS = (x, d = 0) => (!isNum(x) ? 'n/d' : (x > 0 ? '+' : x < 0 ? '−' : '') + fr(Math.abs(x), d));
+const frP = (x, d = 0, sign = true) => (!isNum(x) ? 'n/d' : (sign ? frS(x * 100, d) : fr(x * 100, d)) + ' %');
+const BAND_FR = { robust: 'Robuste', favorable: 'Favorable', trend: 'Tendance', inconclusive: 'Non concluant' };
+function canvasChart({ w, h, dates, layers, vlines = [], zero, theme, labels = true, scale = 2, font = 'Arial' }) {
+  const cv = document.createElement('canvas'); cv.width = Math.round(w * scale); cv.height = Math.round(h * scale);
+  const cx = cv.getContext('2d'); cx.scale(scale, scale);
+  if (theme.bg) { cx.fillStyle = theme.bg; cx.fillRect(0, 0, w, h); }
+  const m = labels ? { l: 46, r: 10, t: 8, b: 22 } : { l: 2, r: 2, t: 3, b: 3 };
+  const n = dates.length; const xs = (i) => m.l + (n <= 1 ? 0 : (i * (w - m.l - m.r)) / (n - 1));
+  let lo = Infinity, hi = -Infinity;
+  const take = (a) => { for (const v of a) if (isNum(v)) { if (v < lo) lo = v; if (v > hi) hi = v; } };
+  layers.forEach((L) => { if (L.y) take(L.y); if (L.lo) { take(L.lo); take(L.hi); } });
+  if (zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+  if (!isNum(lo)) { lo = 0; hi = 1; } if (!(hi > lo)) hi = lo + 1;
+  const ticks = niceTicks(lo, hi, 4);
+  if (labels) { lo = Math.min(lo, ticks[0]); hi = Math.max(hi, ticks[ticks.length - 1]); } else { const pad = (hi - lo) * 0.06; lo -= pad; hi += pad; }
+  const ys = (v) => m.t + ((hi - v) * (h - m.t - m.b)) / (hi - lo);
+  cx.font = `12px ${font}`; cx.lineJoin = 'round';
+  if (labels) {
+    cx.strokeStyle = theme.grid; cx.lineWidth = 1; cx.fillStyle = theme.muted; cx.textAlign = 'right';
+    ticks.forEach((t) => { cx.beginPath(); cx.moveTo(m.l, ys(t)); cx.lineTo(w - m.r, ys(t)); cx.stroke(); cx.fillText(fr(t, Math.abs(t) < 10 && t % 1 ? 1 : 0), m.l - 6, ys(t) + 4); });
+    const nx = 5;
+    for (let k = 0; k < nx; k++) { const i = Math.round((k * (n - 1)) / (nx - 1)); cx.textAlign = k === 0 ? 'left' : k === nx - 1 ? 'right' : 'center'; cx.fillText(frShort(dates[i]), xs(i), h - 6); }
+  }
+  if (zero) { cx.strokeStyle = theme.muted; cx.lineWidth = 1; cx.beginPath(); cx.moveTo(m.l, ys(0)); cx.lineTo(w - m.r, ys(0)); cx.stroke(); }
+  const segs = (ok) => { const out = []; let cur = null; for (let i = 0; i < n; i++) { if (ok(i)) { if (!cur) out.push(cur = []); cur.push(i); } else cur = null; } return out; };
+  for (const L of layers) {
+    if (L.lo) {
+      cx.fillStyle = theme.band;
+      for (const s of segs((i) => isNum(L.lo[i]) && isNum(L.hi[i]))) { cx.beginPath(); s.forEach((i, k) => (k ? cx.lineTo(xs(i), ys(L.hi[i])) : cx.moveTo(xs(i), ys(L.hi[i])))); [...s].reverse().forEach((i) => cx.lineTo(xs(i), ys(L.lo[i]))); cx.closePath(); cx.fill(); }
+    } else {
+      cx.strokeStyle = L.color; cx.lineWidth = L.w || 1.8; cx.setLineDash(L.dash ? [6, 4] : []);
+      for (const s of segs((i) => isNum(L.y[i]))) { cx.beginPath(); s.forEach((i, k) => (k ? cx.lineTo(xs(i), ys(L.y[i])) : cx.moveTo(xs(i), ys(L.y[i])))); cx.stroke(); }
+      cx.setLineDash([]);
+    }
+  }
+  vlines.forEach((v) => { if (v.i > 0 && v.i < n) { const x = (xs(v.i - 1) + xs(v.i)) / 2; cx.strokeStyle = v.color; cx.lineWidth = v.w || 1.2; cx.setLineDash(v.dash ? [4, 3] : []); cx.beginPath(); cx.moveTo(x, m.t); cx.lineTo(x, h - m.b); cx.stroke(); cx.setLineDash([]); } });
+  return cv.toDataURL('image/png');
+}
+const COV_COLORS = ['4E95D9', 'DC7A20', '25AE93', 'F0524F', '9877D6', 'C2961F', 'E0559C', '55AD5A', '7486E3', 'C27648'];
+const SLIDE_FONTS = { gslides: { title: 'Inter Tight', body: 'Inter', chart: 'Inter, Arial', titleSize: 24, label: 'Google Slides' }, ppt: { title: 'Baikal Condensed', body: 'Calibri', chart: 'Calibri, Carlito, Arial', titleSize: 28, label: 'PowerPoint' } };
+async function buildSlides(fonts = SLIDE_FONTS.gslides) {
+  const PptxGenJS = await loadPptx();
+  const snap = S.sheet.frozen; const d = snap.design; const f = d.framing; const p = periods(d); const A = R.analysis.out; const ds = S.data.dates;
+  const sens = R.sens && R.sens.sig === snap.at + JSON.stringify(S.val.shift) ? R.sens.out : null;
+  const pptx = new PptxGenJS(); pptx.layout = 'LAYOUT_WIDE'; pptx.title = `Causal Impact ${d.kpi}`;
+  const IW = 13.333, IH = 7.5; const X = (v) => +((v * IW) / 100).toFixed(3), Y = (v) => +((v * IH) / 100).toFixed(3);
+  const C = { bg: '121417', ink: 'E8EAED', muted: '9AA1AA', line: '2C3137', panel: '1B1E22', accent: '7FB0E0', flag: 'FF6B6B', flagBg: '3A1D21', ok: '6FCF97' };
+  const SH = pptx.ShapeType; const BODY = fonts.body; let num = 0;
+  const box = (x, y, w, h) => ({ x: X(x), y: Y(y), w: X(w), h: Y(h) });
+  const shape = (s, x, y, w, h, o = {}) => s.addShape(o.shape || SH.rect, { ...box(x, y, w, h), fill: o.fill ? { color: o.fill } : { type: 'none' }, line: o.line ? { color: o.line, width: o.lw || 0.75, ...(o.dash ? { dashType: o.dash } : {}) } : { type: 'none' }, ...(o.radius ? { rectRadius: o.radius } : {}) });
+  const text = (s, x, y, w, h, t, o = {}) => s.addText(t, { ...box(x, y, w, h), margin: 0, fontFace: o.font || BODY, fontSize: o.size || 11, color: o.color || C.ink, bold: !!o.bold, italic: !!o.italic, align: o.align || 'left', valign: o.valign || 'top', paraSpaceAfter: o.para || 0, fit: 'none' });
+  const rich = (s, x, y, w, h, runs, o = {}) => s.addText(runs, { ...box(x, y, w, h), margin: 0, fontFace: BODY, fontSize: o.size || 11, color: o.color || C.ink, valign: o.valign || 'top', paraSpaceAfter: o.para || 0, fit: 'none' });
+  const slide = () => { const s = pptx.addSlide(); num++; s.background = { color: C.bg }; text(s, 80, 93, 16.5, 3, String(num), { size: 9, color: C.muted, align: 'right' }); return s; };
+  const title = (s, t, accent, sub) => {
+    const parts = accent && t.includes(accent) ? [t.split(accent)[0], accent, t.split(accent).slice(1).join(accent)] : [t, '', ''];
+    s.addText(parts.map((x, i) => ({ text: x, options: { color: i === 1 ? C.accent : C.ink } })).filter((r) => r.text), { ...box(3.5, 5.5, 90, 10), margin: 0, fontFace: fonts.title, fontSize: t.length > 68 ? fonts.titleSize - 4 : fonts.titleSize, bold: true, valign: 'top', fit: 'none' });
+    if (sub) text(s, 3.5, 15.2, 90, 3, sub, { size: 11, color: C.muted });
+  };
+  const source = (s, t) => text(s, 3.5, 93, 75, 3, t, { size: 8, color: C.muted });
+  const chip = (s, x, y, t, w = 10) => { shape(s, x, y, w, 3.6, { fill: C.bg, line: C.line, shape: SH.roundRect, radius: 0.12 }); text(s, x, y, w, 3.6, t, { size: 9, bold: true, color: C.muted, align: 'center', valign: 'middle' }); };
+  const missing = { text: 'Non renseigné', options: { color: C.muted, italic: true } };
+  const val = (v) => (v && String(v).trim() ? { text: String(v).trim() } : missing);
+  const on = Object.keys(snap.covs).filter((n) => snap.covs[n].on);
+  const exposed = on.filter((n) => snap.covs[n].status === 'Exposed');
+  const inc = Object.fromEntries(A.covariates.map((c) => [c.name, c.inclusionProb]));
+  const drop = Object.fromEntries(A.covariatesDropped.map((c) => [c.name, c.reason]));
+  const byInc = [...on].sort((a, b) => (inc[b] ?? -1) - (inc[a] ?? -1));
+  const srcLine = `Source : ${S.data.source} · outil Causal Impact, moteur ${A.engine} (méthode R CausalImpact) · fiche figée le ${frD(snap.at.slice(0, 10))}`;
+  const theme = { bg: '#121417', grid: '#23272C', muted: '#9AA1AA', band: 'rgba(127,176,224,0.22)' };
+  const CAT_FR = { 'Market demand': 'Demande marché', Competition: 'Concurrence', Seasonality: 'Saisonnalité', 'Regulatory & macro': 'Réglementaire', 'Alternative channel': 'Canal alternatif', Brand: 'Marque' };
+  const ST_FR = { Exposed: ['Exposée', C.flag], Doubtful: ['Douteuse', 'D4A72C'], Intact: ['Intacte', C.ok], 'Not reviewed': ['non revue', C.muted] };
+  const pxW = (w) => Math.round((w * IW * 96) / 100), pxH = (h) => Math.round((h * IH * 96) / 100);
+
+  // ---- 1. Test sheet
+  {
+    const s = slide(); const ev = (f.event || '').trim();
+    title(s, `Fiche de test : ${ev && ev.length <= 55 ? ev : d.kpi}`, ev && ev.length <= 55 ? ev : d.kpi, `Pré-période du ${frD(d.preStart)} au ${frD(d.preEnd)} · intervention le ${frD(d.intervention)} · post-période jusqu'au ${frD(d.postEnd)}`);
+    shape(s, 3.5, 21, 44, 15, { fill: C.panel, shape: SH.roundRect, radius: 0.1 }); shape(s, 3.5, 22.5, 0.35, 12, { fill: C.accent });
+    text(s, 5.5, 22.5, 40, 3, 'Événement testé', { size: 10, color: C.muted });
+    rich(s, 5.5, 26, 40, 9, [val(ev)], { size: 13 });
+    const hv = snap.holdout, pl = snap.placebo;
+    const items = [
+      ['Décision éclairée', f.decision],
+      ['KPI priorité 1', `${d.kpi} (${S.data.source}, journalier)`],
+      ['KPI priorités 2 et 3', [f.kpi2, f.kpi3].filter((x) => x && x.trim()).join(' · ')],
+      ['Pré-période', p.ok ? `${p.nPre} jours` : ''],
+      ['Post-période', p.ok ? `${p.nPost} jours` : ''],
+      ['Covariables', `${on.length} retenue${on.length > 1 ? 's' : ''}${exposed.length ? `, dont ${exposed.length} exposée${exposed.length > 1 ? 's' : ''} à la campagne` : ''}`],
+      ['Modèle', `niveau local${d.weekly ? ' et saisonnalité hebdomadaire' : ', sans saisonnalité hebdomadaire'}, prior ${fr(+d.prior, 2)}, ${fr(+d.niter)} itérations`],
+      ['Validation', [hv ? `hold-out MAPE ${frP(hv.mape, 1, false)}, biais ${frP(hv.bias, 1)}` : 'hold-out non lancé', pl ? `placebos : ${pl.robust} robuste${pl.robust > 1 ? 's' : ''} sur ${pl.n}` : 'placebos non lancés'].join(' · ')],
+      ['Événements parasites', [f.eventsPre, f.eventsPost].filter((x) => x && x.trim()).join(' · ')],
+    ];
+    const rowH = 5.6;
+    items.forEach(([k, v], i) => {
+      const y = 39 + i * rowH;
+      shape(s, 3.5, y + rowH - 0.1, 44, 0.1, { fill: C.line });
+      text(s, 3.5, y + 0.6, 14, rowH - 1, k, { size: 9.5, color: C.muted, valign: 'middle' });
+      rich(s, 18, y + 0.6, 29.5, rowH - 1, [val(v)], { size: 10.5, valign: 'middle' });
+    });
+    const hyp = (y, h, lab, v) => { shape(s, 52, y, 44.5, h, { fill: C.panel, shape: SH.roundRect, radius: 0.1 }); chip(s, 53.5, y + 2, lab, 6); rich(s, 53.5, y + 7.2, 41.5, h - 8.5, [val(v)], { size: 11 }); };
+    hyp(21, 16, 'H0', f.h0); hyp(39, 20, 'H1', f.h1);
+    shape(s, 52, 61, 44.5, 27, { fill: C.bg, line: C.line, shape: SH.roundRect, radius: 0.1 });
+    text(s, 53.5, 62.8, 40, 3, 'Critères de lecture (grille de confiance)', { size: 10, color: C.muted });
+    const bands = [['Robuste', '≥ 95 % et intervalle hors zéro'], ['Favorable', '≥ 90 %'], ['Tendance', '70 à 90 %'], ['Non concluant', '< 70 %']];
+    bands.forEach(([b, t], i) => { const x = 53.5 + i * 10.6; shape(s, x, 67, 10, 10.5, { fill: C.panel, shape: SH.roundRect, radius: 0.08 }); text(s, x + 0.8, 68, 8.6, 3, b, { size: 10, bold: true }); text(s, x + 0.8, 71.5, 8.6, 5, t, { size: 8.5, color: C.muted }); });
+    const thr = f.threshold !== '' && f.threshold != null;
+    rich(s, 53.5, 80, 41.5, 6.5, [{ text: 'Seuil business : ', options: { color: C.muted } }, thr ? { text: `uplift d'au moins ${frS(+f.threshold, 0)} % sur la borne basse de l'intervalle`, options: { bold: true, color: C.accent } } : missing], { size: 10.5, valign: 'middle' });
+    source(s, srcLine);
+  }
+
+  // ---- 2. Covariates, one card each
+  {
+    const s = slide();
+    const nr = on.filter((n) => snap.covs[n].status === 'Not reviewed').length;
+    if (!on.length) title(s, 'Aucune covariable : contrefactuel en niveau local seul', 'Aucune covariable');
+    else if (exposed.length) title(s, `${on.length} covariables retenues, dont ${exposed.length} exposée${exposed.length > 1 ? 's' : ''} à la campagne`, `${exposed.length} exposée${exposed.length > 1 ? 's' : ''}`, 'Une carte par covariable, classées par poids dans le modèle');
+    else if (!nr) title(s, `${on.length} covariable${on.length > 1 ? 's' : ''} retenue${on.length > 1 ? 's' : ''}, aucune exposée à la campagne`, 'aucune exposée', 'Une carte par covariable, classées par poids dans le modèle');
+    else title(s, `${on.length} covariable${on.length > 1 ? 's' : ''} retenue${on.length > 1 ? 's' : ''}, dont ${nr} sans statut H-A`, `${nr} sans statut`, 'Une carte par covariable, classées par poids dans le modèle');
+    const list = byInc.slice(0, 30);
+    const n = list.length; const cols = n <= 4 ? Math.max(1, n) : n <= 8 ? 4 : n <= 20 ? 5 : 6; const rows = Math.max(1, Math.ceil(n / cols));
+    const gx = 3.5, gy = 20, gw = 93, gh = 64; const cw = gw / cols, ch = gh / rows; const maxCh = Math.floor(cw * 1.5);
+    list.forEach((name, k) => {
+      const c = k % cols, r = Math.floor(k / cols); const x = gx + c * cw, y = gy + r * ch; const cv = snap.covs[name]; const exp = cv.status === 'Exposed';
+      shape(s, x + 0.4, y + 0.4, cw - 0.8, ch - 0.8, { fill: exp ? C.flagBg : C.panel, shape: SH.roundRect, radius: 0.08 });
+      text(s, x + 1.2, y + 1.3, cw - 2.4, 3.2, name.length > maxCh ? name.slice(0, maxCh - 1) + '…' : name, { size: 9.5, bold: true });
+      const imgH = ch - 10.5;
+      if (imgH > 3) {
+        const a = S.data.cols[name];
+        const img = canvasChart({ font: fonts.chart, w: 300, h: Math.max(40, Math.round((300 * (imgH * IH)) / ((cw - 2.4) * IW))), dates: ds.slice(p.i0, p.j1 + 1), layers: [{ y: a.slice(p.i0, p.j1 + 1), color: '#F2F3F5', w: 1.3 }], vlines: [{ i: p.j0 - p.i0, color: '#7FB0E0', w: 1.8 }], theme: { ...theme, bg: exp ? '#3A1D21' : '#1B1E22' }, labels: false });
+        s.addImage({ data: img, ...box(x + 1.2, y + 4.8, cw - 2.4, imgH) });
+      }
+      const [stl, stc] = ST_FR[cv.status] || ST_FR['Not reviewed'];
+      rich(s, x + 1.2, y + ch - 5.2, cw * 0.6, 3.6, [{ text: cv.cat ? `${CAT_FR[cv.cat] || cv.cat} · ` : '', options: { color: C.muted } }, { text: stl, options: { color: stc, bold: exp } }].filter((r) => r.text), { size: 8, valign: 'middle' });
+      text(s, x + cw * 0.6, y + ch - 5.2, cw * 0.4 - 1.2, 3.6, drop[name] ? 'constante, écartée' : `inclusion ${fr(inc[name], 2)}`, { size: 8, bold: (inc[name] || 0) >= 0.5, color: drop[name] ? C.muted : C.ink, align: 'right', valign: 'middle' });
+    });
+    text(s, 3.5, 85.5, 92, 5, `Courbes du ${frD(d.preStart)} au ${frD(d.postEnd)}, trait bleu à l'intervention. Inclusion : part des tirages du modèle qui utilisent la covariable. Statut H-A : la campagne peut-elle faire bouger la série ?${on.length > 30 ? ' 30 covariables affichées, par inclusion décroissante.' : ''}`, { size: 8.5, color: C.muted });
+    source(s, srcLine);
+  }
+
+  // ---- 3. All covariates on one chart (index base 100 = pre-period mean, 7-day moving average)
+  if (on.length) {
+    const s = slide();
+    const kp = S.data.cols[d.kpi]; const rng = (a) => a.slice(p.i0, p.j1 + 1);
+    const ma7 = (a) => a.map((_, i) => { const w = a.slice(Math.max(0, i - 6), i + 1).filter(isNum); return w.length ? mean(w) : NaN; });
+    const index = (a) => { const pre = a.slice(p.i0, p.i1 + 1).filter(isNum); const m = pre.length ? mean(pre) : NaN; if (!(Math.abs(m) > 1e-12)) return null; return rng(ma7(a)).map((v) => (100 * v) / m); };
+    const ratio = (a) => { const pre = a.slice(p.i0, p.i1 + 1).filter(isNum), post = a.slice(p.j0, p.j1 + 1).filter(isNum); const m = pre.length ? mean(pre) : NaN; return Math.abs(m) > 1e-12 && post.length ? mean(post) / m - 1 : NaN; };
+    const series = []; const skipped = [];
+    byInc.forEach((name) => { const y = index(S.data.cols[name]); if (!y) { skipped.push(name); return; } const k = series.length; series.push({ name, y, color: COV_COLORS[k % 10], dash: k >= 10, r: ratio(S.data.cols[name]) }); });
+    const kr = ratio(kp); const rs = series.map((x) => x.r).filter(isNum);
+    const lo = Math.min(...rs), hi = Math.max(...rs);
+    title(s, `Après l'intervention : covariables de ${frP(lo)} à ${frP(hi)}, KPI ${frP(kr)}`, `KPI ${frP(kr)}`, 'Toutes les covariables retenues sur un même axe : base 100 = moyenne de la pré-période, moyenne mobile 7 jours');
+    const ky = index(kp);
+    const img = canvasChart({ font: fonts.chart, w: pxW(64), h: pxH(66), dates: ds.slice(p.i0, p.j1 + 1), theme, layers: [...series.map((x) => ({ y: x.y, color: '#' + x.color, w: 1.5, dash: x.dash })), ...(ky ? [{ y: ky, color: '#F2F3F5', w: 3 }] : [])], vlines: [{ i: p.j0 - p.i0, color: '#F2F3F5', dash: true }] });
+    s.addImage({ data: img, ...box(3.5, 20, 64, 66) });
+    const lx = 70, ly = 20; const all = [{ name: `${d.kpi} (KPI)`, color: C.ink, w: 3, r: kr }, ...series];
+    const lh = Math.min(3.6, 66 / all.length);
+    all.forEach((x, i) => {
+      const y = ly + i * lh;
+      s.addShape(SH.line, { ...box(lx, y + lh / 2, 2.6, 0), line: { color: x.color, width: x.w || 1.75, ...(x.dash ? { dashType: 'dash' } : {}) } });
+      const exp = snap.covs[x.name] && snap.covs[x.name].status === 'Exposed';
+      const nm = x.name.length > 34 ? x.name.slice(0, 33) + '…' : x.name;
+      rich(s, lx + 3.4, y, 18.5, lh, [{ text: nm, options: { bold: i === 0 } }, ...(exp ? [{ text: '  exposée', options: { color: C.flag, bold: true } }] : [])], { size: Math.min(9, lh * 2.6), valign: 'middle' });
+      text(s, lx + 22, y, 4.5, lh, frP(x.r), { size: Math.min(9, lh * 2.6), color: C.muted, align: 'right', valign: 'middle' });
+    });
+    text(s, lx + 18, 16.6, 8.5, 3, 'post / pré', { size: 8, color: C.muted, align: 'right' });
+    text(s, 3.5, 87, 92, 4, `Trait épais blanc : KPI. Traits pleins : les 10 covariables qui pèsent le plus dans le modèle ; tirets : les suivantes, mêmes couleurs dans le même ordre. Pointillé vertical : intervention.${skipped.length ? ` Non affichées (moyenne nulle en pré-période) : ${skipped.join(', ')}.` : ''}`, { size: 8.5, color: C.muted });
+    source(s, srcLine);
+  }
+
+  // ---- 4. Result
+  {
+    const s = slide(); const sm = A.summary, av = sm.average, cu = sm.cumulative;
+    const readBand = sens ? sens.lowestBand : A.band;
+    title(s, `${d.kpi} : ${frP(av.relEffect)} [${frP(av.relEffectLower)} ; ${frP(av.relEffectUpper)}], confiance ${frP(sm.probCausal, 1, false)}`, frP(av.relEffect), `Post-période du ${frD(d.intervention)} au ${frD(d.postEnd)} (${p.nPost} jours), contrefactuel appris sur ${p.nPre} jours`);
+    const ser = A.series; const dts = ser.map((x) => ds[x.index]); const iv = idx(d.intervention) - ser[0].index;
+    text(s, 3.5, 20, 50, 3, 'Observé (blanc) et contrefactuel prédit (bleu, intervalle à 95 %)', { size: 9, color: C.muted });
+    s.addImage({ data: canvasChart({ font: fonts.chart, w: pxW(50), h: pxH(36), dates: dts, theme, layers: [{ lo: ser.map((x) => x.predLower), hi: ser.map((x) => x.predUpper) }, { y: ser.map((x) => x.pred), color: '#7FB0E0', dash: true, w: 1.8 }, { y: ser.map((x) => x.actual), color: '#F2F3F5', w: 1.6 }], vlines: [{ i: iv, color: '#F2F3F5', dash: true }] }), ...box(3.5, 23, 50, 36) });
+    text(s, 3.5, 61, 50, 3, 'Effet cumulé depuis l’intervention (intervalle à 95 %)', { size: 9, color: C.muted });
+    const post = (k) => ser.map((x) => (x.period === 'post' ? x[k] : NaN));
+    s.addImage({ data: canvasChart({ font: fonts.chart, w: pxW(50), h: pxH(24), dates: dts, zero: true, theme, layers: [{ lo: post('cumEffectLower'), hi: post('cumEffectUpper') }, { y: post('cumEffect'), color: '#7FB0E0', w: 2 }], vlines: [{ i: iv, color: '#F2F3F5', dash: true }] }), ...box(3.5, 64, 50, 24) });
+    text(s, 57, 20, 39.5, 3, 'Effet relatif, moyenne de la post-période', { size: 10, color: C.muted });
+    text(s, 57, 23.5, 39.5, 10, frP(av.relEffect), { size: 54, bold: true, font: fonts.title, valign: 'middle' });
+    text(s, 57, 34, 39.5, 3.5, `Intervalle à 95 % [${frP(av.relEffectLower)} ; ${frP(av.relEffectUpper)}] · confiance ${frP(sm.probCausal, 1, false)}`, { size: 11 });
+    const bands = [['robust', 'Robuste', '≥ 95 %, hors zéro'], ['favorable', 'Favorable', '≥ 90 %'], ['trend', 'Tendance', '70 à 90 %'], ['inconclusive', 'Non concluant', '< 70 %']];
+    bands.forEach(([k, b, t], i) => { const x = 57 + i * 9.9; const cur = k === readBand; shape(s, x, 39.5, 9.4, 8.5, { fill: C.panel, line: cur ? C.ink : undefined, lw: 1.75, shape: SH.roundRect, radius: 0.08 }); text(s, x + 0.7, 40.4, 8, 3, b, { size: 9.5, bold: true, color: cur ? C.ink : C.muted }); text(s, x + 0.7, 43.8, 8, 3, t, { size: 8, color: C.muted }); });
+    text(s, 57, 48.6, 39.5, 3, sens && sens.crossesThreshold ? `Encadré : lecture prudente après sensibilité (modèle de base : ${BAND_FR[A.band]}).` : sens ? 'Encadré : niveau du modèle, stable en sensibilité.' : 'Encadré : niveau du modèle de base, sensibilité non lancée.', { size: 8.5, color: C.muted });
+    const rows = [['Moyenne observée', `${fr(av.actual, 1)} par jour`], ['Moyenne prédite', `${fr(av.pred, 1)} [${fr(av.predLower, 1)} ; ${fr(av.predUpper, 1)}]`], ['Effet cumulé', `${frS(cu.absEffect)} [${frS(cu.absEffectLower)} ; ${frS(cu.absEffectUpper)}]`], ['Probabilité d’un effet causal', `${frP(sm.probCausal, 1, false)} (p = ${fr(sm.pValue, 3)})`]];
+    rows.forEach(([k, v], i) => { const y = 53 + i * 4.6; shape(s, 57, y + 4.5, 39.5, 0.1, { fill: C.line }); text(s, 57, y, 17, 4.4, k, { size: 9.5, color: C.muted, valign: 'middle' }); text(s, 74, y, 22.5, 4.4, v, { size: 10.5, align: 'right', valign: 'middle' }); });
+    const lec = [];
+    if (sens) lec.push(`Sensibilité : de ${BAND_FR[sens.lowestBand]} à ${BAND_FR[sens.highestBand]} selon les variantes${sens.crossesThreshold ? `, lecture au niveau le plus prudent : ${BAND_FR[sens.lowestBand]}` : ''}.`);
+    else lec.push('Sensibilité : non lancée.');
+    if (f.threshold !== '' && f.threshold != null) lec.push(`Seuil business ${frS(+f.threshold)} % : borne basse à ${frP(av.relEffectLower)}, ${av.relEffectLower * 100 >= +f.threshold ? 'au-dessus du seuil' : 'sous le seuil'}.`);
+    if (snap.placebo && snap.placebo.n && snap.placebo.robust / snap.placebo.n > 0.2) lec.push(`Placebos : ${snap.placebo.robust} sur ${snap.placebo.n} trouvent un effet à tort, contrefactuel non fiable selon le protocole.`);
+    if (exposed.length) lec.push(`${exposed.length} covariable${exposed.length > 1 ? 's' : ''} exposée${exposed.length > 1 ? 's' : ''} retenue${exposed.length > 1 ? 's' : ''} : biais possible sur l’uplift.`);
+    s.addText(lec.map((t, i) => ({ text: t, options: { bullet: { code: '2192', indent: 14 }, breakLine: i < lec.length - 1 } })), { ...box(57, 72.5, 39.5, 16), margin: 0, fontFace: BODY, fontSize: 9.5, color: C.ink, valign: 'top', paraSpaceAfter: 3, fit: 'none' });
+    source(s, srcLine);
+  }
+  return pptx;
+}
+async function exportSlides(variant) {
+  if (busy) { toast('Another computation is running.'); return; }
+  status('Building the slides…', null, false);
+  try {
+    const fonts = SLIDE_FONTS[variant];
+    const pptx = await buildSlides(fonts);
+    const blob = await pptx.write({ outputType: 'blob' });
+    const d = S.sheet.frozen.design;
+    await saveFile(`causal-impact_${`${d.kpi}_${d.intervention}`.replace(/[^\w-]+/g, '_')}_${variant === 'ppt' ? 'powerpoint' : 'google-slides'}.pptx`, blob);
+  } catch (e) { status(`Slides failed: ${e.message}`, null, false); }
+}
+
+// ======================================================================
+// Bindings
+// ======================================================================
+function changed(k) {
+  const d = S.design;
+  if (k === 'design.intervention' && d.intervention) {
+    const prev = isoAdd(d.intervention, -1); if (idx(prev) >= 0) d.preEnd = prev;
+    if (!d.postEnd || d.postEnd < d.intervention) d.postEnd = S.data.dates[S.data.dates.length - 1];
+  }
+  if (k === 'design.kpi' && S.covs[d.kpi]) S.covs[d.kpi].on = false;
+  save(); render();
+}
+document.addEventListener('change', (e) => {
+  const el = e.target;
+  if (el.dataset.cov) { const n = el.dataset.cov; S.covs[n] = S.covs[n] || { on: false, cat: '', status: 'Not reviewed' }; S.covs[n][el.dataset.f] = el.type === 'checkbox' ? el.checked : el.value; changed(); return; }
+  if (!el.dataset.k || el.dataset.live) return;
+  let v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? (el.value === '' ? null : +el.value) : el.value;
+  if (el.dataset.num) v = +v;
+  const ps = el.dataset.k.split('.'); let o = S; for (let i = 0; i < ps.length - 1; i++) o = o[ps[i]]; o[ps[ps.length - 1]] = v;
+  changed(el.dataset.k);
+});
+document.addEventListener('input', (e) => {
+  const el = e.target; if (!el.dataset.k || !el.dataset.live) return;
+  const ps = el.dataset.k.split('.'); let o = S; for (let i = 0; i < ps.length - 1; i++) o = o[ps[i]]; o[ps[ps.length - 1]] = el.value; save();
+});
+document.addEventListener('focusout', (e) => { if (e.target.dataset && e.target.dataset.live) renderSteps(); });
+
+// ======================================================================
+// Presets
+// ======================================================================
+function applyPreset(cfg) {
+  if (!S.data) { toast('Import the dataset first.'); return; }
+  if (frozen()) { toast('Amend the frozen test sheet before applying a preset.'); return; }
+  const norm = (s) => s.normalize('NFC'); const names = new Set(S.data.names.map(norm));
+  const need = [cfg.design.kpi, ...cfg.on].filter((n) => !names.has(norm(n)));
+  const dates = ['preStart', 'preEnd', 'intervention', 'postEnd'].filter((k) => cfg.design[k] && idx(cfg.design[k]) < 0);
+  if (need.length || dates.length) { status(`Preset not applied: ${need.length ? `missing columns ${need.join(', ')}` : ''}${need.length && dates.length ? '; ' : ''}${dates.length ? `dates outside the data (${dates.join(', ')})` : ''}.`, null, false); return; }
+  S.design = { ...S.design, ...cfg.design, framing: S.design.framing };
+  for (const n of S.data.names) S.covs[n] = { on: cfg.on.map(norm).includes(norm(n)), cat: (cfg.cat || {})[n] || '', status: (cfg.status || {})[n] || 'Not reviewed' };
+  if (cfg.val) S.val = { ...blankVal(), ...cfg.val };
+  if (cfg.notes && !S.sheet.notes) S.sheet.notes = cfg.notes;
+  clearResults(); save(); $('#presetMenu').open = false; render(); toast('Preset applied.');
+}
+function renderPresets() {
+  const ups = userPresets();
+  $('#presetPop').innerHTML = `${ups.length ? '' : '<p class="small muted">No saved preset yet.</p>'}
+  ${ups.map((u, i) => `<div class="pi"><div><b>${esc(u.name)}</b><div class="small muted">${esc(u.cfg.design.kpi)} · saved ${esc(u.at.slice(0, 10))}</div></div><span><button type="button" data-up="${i}">Apply</button> <button type="button" data-del="${i}" aria-label="Delete ${esc(u.name)}">×</button></span></div>`).join('')}
+  <div class="field" style="margin-top:10px"><span>Save current settings as a preset</span><div class="row" style="margin:0"><input type="text" id="preName" placeholder="Name" style="flex:1"><button type="button" id="preSave">Save</button></div></div>`;
+  $$('[data-up]').forEach((b) => b.addEventListener('click', () => applyPreset(userPresets()[+b.dataset.up].cfg)));
+  $$('[data-del]').forEach((b) => b.addEventListener('click', () => { const a = userPresets(); a.splice(+b.dataset.del, 1); setUserPresets(a); renderPresets(); }));
+  $('#preSave').addEventListener('click', () => {
+    const name = $('#preName').value.trim(); if (!name || !S.data) { toast(S.data ? 'Name the preset first.' : 'Import data first.'); return; }
+    const { framing, ...design } = S.design;
+    const cfg = { design, on: selected(), cat: Object.fromEntries(Object.entries(S.covs).map(([k, v]) => [k, v.cat])), status: Object.fromEntries(Object.entries(S.covs).map(([k, v]) => [k, v.status])), val: { ...S.val } };
+    const a = userPresets(); a.push({ name, at: new Date().toISOString(), cfg });
+    toast(setUserPresets(a) ? 'Preset saved in this browser.' : 'This browser does not allow saving presets.'); renderPresets();
+  });
+}
+// ======================================================================
+// History: every frozen test, kept in this browser (IndexedDB)
+// ======================================================================
+const HDB = 'ci-tool-history', HSTORE = 'tests', HFORMAT = 'causal-impact-history';
+let hdbP = null;
+function hdb() {
+  if (!('indexedDB' in window)) return Promise.reject(new Error('IndexedDB unavailable'));
+  return (hdbP = hdbP || new Promise((ok, ko) => {
+    let rq; try { rq = indexedDB.open(HDB, 1); } catch (e) { hdbP = null; ko(e); return; }
+    rq.onupgradeneeded = () => rq.result.createObjectStore(HSTORE, { keyPath: 'id' });
+    rq.onsuccess = () => ok(rq.result);
+    rq.onerror = () => { hdbP = null; ko(rq.error || new Error('IndexedDB refused')); };
+  }));
+}
+async function hTx(mode, fn) {
+  const db = await hdb();
+  return new Promise((ok, ko) => {
+    const tx = db.transaction(HSTORE, mode); const st = tx.objectStore(HSTORE); let out;
+    const r = fn(st); if (r) r.onsuccess = () => { out = r.result; };
+    tx.oncomplete = () => ok(out); tx.onerror = () => ko(tx.error); tx.onabort = () => ko(tx.error || new Error('aborted'));
+  });
+}
+const histAll = () => hTx('readonly', (st) => st.getAll()).then((a) => (a || []).sort((x, y) => (x.savedAt < y.savedAt ? 1 : -1)));
+const histGet = (id) => hTx('readonly', (st) => st.get(id));
+const histPutRaw = (e) => hTx('readwrite', (st) => st.put(e));
+const histDel = (id) => hTx('readwrite', (st) => st.delete(id));
+function resultOf() {
+  if (!R.analysis || !S.sheet.frozen || R.analysis.sig !== S.sheet.frozen.at) return null;
+  const sm = R.analysis.out.summary, av = sm.average;
+  return { relEffect: av.relEffect, lower: av.relEffectLower, upper: av.relEffectUpper, probCausal: sm.probCausal, band: R.analysis.out.band, frozenAt: S.sheet.frozen.at };
+}
+async function histSave() {
+  if (!S.data || !S.sheet.frozen) return false;
+  try {
+    const prev = await histGet(S.id);
+    const f = S.sheet.frozen, d = f.design;
+    let result = resultOf();
+    if (!result && prev && prev.result && prev.result.frozenAt === f.at) result = prev.result;
+    const entry = {
+      id: S.id, savedAt: new Date().toISOString(), firstSavedAt: (prev && prev.firstSavedAt) || new Date().toISOString(),
+      frozenAt: f.at, kpi: d.kpi, event: (d.framing && d.framing.event) || '', intervention: d.intervention, postEnd: d.postEnd,
+      covariates: Object.keys(f.covs || {}).filter((k) => f.covs[k].on).length, source: S.data.source,
+      amendments: S.sheet.deviations.length, result, state: JSON.parse(JSON.stringify(S)),
+    };
+    await histPutRaw(entry);
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    if (route() === 'history') vHistory();
+    return true;
+  } catch (e) { return false; }
+}
+function reviveState(s) {
+  const f = fresh();
+  return { ...f, ...s, id: s.id || f.id, design: { ...f.design, ...s.design, framing: { ...blankFraming(), ...((s.design && s.design.framing) || {}) } }, val: { ...f.val, ...s.val }, sheet: { ...f.sheet, ...s.sheet } };
+}
+async function histOpen(id) {
+  const e = await histGet(id); if (!e) { toast('This test is no longer in the history.'); vHistory(); return; }
+  S = reviveState(e.state); clearResults(); save();
+  location.hash = 'analysis'; render();
+  if (frozen() && e.result && e.result.frozenAt === S.sheet.frozen.at) runAnalysis();
+}
+const isoDay = () => new Date().toISOString().slice(0, 10);
+async function histExport() {
+  try {
+    const tests = await histAll();
+    if (!tests.length) { toast('The history is empty: nothing to export.'); return; }
+    const doc = { format: HFORMAT, version: 1, exportedAt: new Date().toISOString(), engine: ($('#engv').textContent.split(' ')[1] || ''), tests };
+    saveFile(`causal-impact-history_${isoDay()}.json`, new Blob([JSON.stringify(doc)], { type: 'application/json' }));
+  } catch (e) { toast('This browser does not give access to the history.'); }
+}
+async function histImport(file) {
+  let doc;
+  try { doc = JSON.parse(await file.text()); } catch (e) { status('Import failed: the file is not valid JSON.', null, false); return; }
+  if (!doc || doc.format !== HFORMAT || !Array.isArray(doc.tests)) { status('Import failed: this is not a Causal Impact history file.', null, false); return; }
+  let added = 0, updated = 0, kept = 0, bad = 0;
+  try {
+    const have = new Map((await histAll()).map((x) => [x.id, x]));
+    for (const t of doc.tests) {
+      if (!t || typeof t.id !== 'string' || !t.state || !t.state.data || !t.state.sheet || !t.state.sheet.frozen) { bad++; continue; }
+      const cur = have.get(t.id);
+      if (!cur) { await histPutRaw(t); added++; }
+      else if ((t.savedAt || '') > (cur.savedAt || '')) { await histPutRaw(t); updated++; }
+      else kept++;
+    }
+  } catch (e) { status('Import failed: this browser does not give access to the history.', null, false); return; }
+  status(`History imported: ${added} added, ${updated} updated, ${kept} already up to date${bad ? `, ${bad} unreadable entr${bad > 1 ? 'ies' : 'y'} skipped` : ''}.`, null, false, true);
+  vHistory();
+}
+let delArmed = null;
+async function vHistory() {
+  renderSteps();
+  let h = `<h2>History</h2><p class="lead">Every frozen test sheet is saved here automatically, with its data and settings. The latest analysis result is stored with it. Reopen a test to read it again; the analysis reruns with the same seed.</p>
+  <div class="note"><b>The history lives in this browser only.</b> Another browser, another device or a private window will not show it, and clearing this site's data deletes it. Export the history regularly to keep a copy, and import that file to restore it or move it elsewhere.</div>
+  <div class="row"><button type="button" id="hExport">Export history</button><label class="btn">Import history<input type="file" id="hImport" accept=".json,application/json" hidden></label><span class="small muted" id="hUsage"></span></div>`;
+  let list;
+  try { list = await histAll(); }
+  catch (e) { view.innerHTML = h + `<div class="empty">This browser does not allow local storage for this page, so no history can be kept here.</div>`; bindHist(); return; }
+  if (route() !== 'history') return;
+  if (!list.length) h += `<div class="empty">No test saved yet. A test is saved here when its test sheet is frozen.</div>`;
+  else {
+    h += `<div class="scroll"><table><thead><tr><th>Frozen on (UTC)</th><th>KPI</th><th>Event tested</th><th>Post-period</th><th class="n">Covariates</th><th class="n">Rel. effect</th><th class="n">95% interval</th><th class="n">Confidence</th><th>Band</th><th></th></tr></thead><tbody>
+    ${list.map((t) => { const r = t.result; const here = t.id === S.id;
+      return `<tr><td style="white-space:nowrap">${esc(String(t.frozenAt || '').replace('T', ' ').slice(0, 16))}${t.amendments ? `<br><span class="chip">${t.amendments} amendment${t.amendments > 1 ? 's' : ''}</span>` : ''}${here ? ' <span class="chip">open</span>' : ''}</td>
+      <td>${esc(t.kpi || '')}</td><td>${esc(t.event || '')}</td><td style="white-space:nowrap">${t.intervention && t.postEnd ? `${fShort(t.intervention)} to ${fDate(t.postEnd)}` : ''}</td><td class="n">${t.covariates ?? ''}</td>
+      <td class="n">${r ? pct(r.relEffect) : '<span class="muted">not run</span>'}</td><td class="n">${r ? `[${pct(r.lower)} ; ${pct(r.upper)}]` : ''}</td><td class="n">${r ? pct(r.probCausal, 1, false) : ''}</td><td>${r ? bandName(r.band) : ''}</td>
+      <td class="act"><div><button type="button" data-hopen="${esc(t.id)}">Reopen</button><button type="button" data-hdel="${esc(t.id)}">Delete</button></div></td></tr>`; }).join('')}
+    </tbody></table></div>`;
+  }
+  view.innerHTML = h; bindHist();
+  if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then((u) => { const el = $('#hUsage'); if (el && u && u.usage != null) el.textContent = `${list.length} test${list.length > 1 ? 's' : ''} · about ${(u.usage / 1048576).toFixed(1)} MB used by this site`; }).catch(() => {});
+}
+let openArmed = null;
+function bindHist() {
+  $('#hExport').addEventListener('click', histExport);
+  const fi = $('#hImport'); fi.addEventListener('change', () => { if (fi.files[0]) histImport(fi.files[0]); fi.value = ''; });
+  $$('[data-hopen]').forEach((b) => b.addEventListener('click', () => {
+    const id = b.dataset.hopen;
+    const unsaved = S.data && !frozen() && id !== S.id;
+    if (unsaved && openArmed !== id) { openArmed = id; b.textContent = 'Click again: current draft lost'; setTimeout(() => { if (openArmed === id) { openArmed = null; b.textContent = 'Reopen'; } }, 4000); return; }
+    openArmed = null; histOpen(id);
+  }));
+  $$('[data-hdel]').forEach((b) => b.addEventListener('click', async () => {
+    const id = b.dataset.hdel;
+    if (delArmed !== id) { delArmed = id; b.textContent = 'Click again to delete'; setTimeout(() => { if (delArmed === id) { delArmed = null; b.textContent = 'Delete'; } }, 4000); return; }
+    delArmed = null;
+    try { await histDel(id); toast('Test deleted from the history.'); } catch (e) { toast('This browser refused the deletion.'); }
+    vHistory();
+  }));
+}
+
+let newArmed = false;
+$('#newTest').addEventListener('click', () => {
+  if (!newArmed) { newArmed = true; $('#newTest').textContent = 'Click again to confirm'; setTimeout(() => { newArmed = false; $('#newTest').textContent = 'New test'; }, 3000); return; }
+  newArmed = false; $('#newTest').textContent = 'New test';
+  const data = S.data; S = fresh(); if (data) { S.data = data; S.design.kpi = data.names[0]; S.design.preStart = data.dates[0]; S.design.postEnd = data.dates[data.dates.length - 1]; for (const n of data.names) S.covs[n] = { on: false, cat: '', status: 'Not reviewed' }; }
+  clearResults(); save(); location.hash = 'data'; render();
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => $$('.fig').forEach(drawChart));
+new MutationObserver(() => $$('.fig').forEach(drawChart)).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+render();
+}
+
+</script>
+</body>
+</html>
