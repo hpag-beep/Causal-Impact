@@ -17,7 +17,8 @@
 --bg:#000000;--panel:#101214;--ink:#e8eaed;
 --muted:#9aa1aa;--line:#262a2f;--accent:#7fb0e0;
 --band:rgba(127,176,224,.22);--shade:rgba(232,234,237,.07);
---flag:#ff6b6b;--ok:#6fcf97;--grid:#1a1d21}
+--flag:#ff6b6b;--ok:#6fcf97;--grid:#1a1d21;
+--line-hover:#3a4047;--accent-hover:#94bfe8}
 *{box-sizing:border-box;min-width:0}
 [hidden]{display:none!important}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,Arial,sans-serif;overflow-x:clip}
@@ -54,8 +55,8 @@ input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-vis
 .check{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:15px;min-height:40px}
 .check input{width:18px;height:18px;accent-color:var(--accent)}
 button,.btn{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 14px;min-height:40px;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .1s ease}
-button:not(:disabled):hover,.btn:hover{border-color:#3a4047}button:not(:disabled):active,.btn:active{transform:translateY(1px)}
-button.primary:not(:disabled):hover,.btn.primary:hover{background:#94bfe8;border-color:#94bfe8}
+button:not(:disabled):hover,.btn:hover{border-color:var(--line-hover)}button:not(:disabled):active,.btn:active{transform:translateY(1px)}
+button.primary:not(:disabled):hover,.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
 button.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:500}
 button:disabled{opacity:.45;cursor:not-allowed}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:12px 0}
