@@ -27,14 +27,14 @@ p{margin:6px 0}.muted{color:var(--muted)}.small{font-size:13px}
 .top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;gap:14px;padding:10px max(3vw,16px);flex-wrap:wrap}
 .bar .sp{flex:1}
-.steps{display:flex;gap:2px;overflow-x:auto;padding:0 max(3vw,16px)}
+.steps{display:flex;gap:2px;overflow-x:auto;padding:0 max(3vw,16px);position:relative}
 .steps a{flex:none;display:flex;flex-direction:column;padding:8px 14px 9px;text-decoration:none;color:var(--muted);border-bottom:2px solid transparent;font-size:14px}
 .steps a b{font-weight:500;color:var(--ink)}.steps a span{font-size:12px}
 .steps a.on{border-bottom-color:var(--accent)}.steps a.on b{color:var(--accent)}
 .steps a .st-ok{color:var(--ok)}.steps a .st-warn{color:var(--flag)}
 main{max-width:1240px;margin:0 auto;padding:24px max(3vw,16px) 80px}
 .lead{max-width:760px;color:var(--muted);margin-bottom:18px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px 18px;align-items:end}
 .field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
 .field.wide{grid-column:1/-1}
 input,select,textarea,button{font:inherit;font-size:15px;color:var(--ink)}
@@ -76,15 +76,21 @@ td select{min-height:34px;padding:4px 6px;font-size:13.5px;min-width:150px}
 .tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 9px;font-size:12.5px;box-shadow:0 4px 14px rgba(0,0,0,.6);white-space:nowrap;z-index:2}
 .tip b{font-weight:600}
 .drop{border:1.5px dashed var(--line);border-radius:8px;padding:22px;text-align:center;color:var(--muted)}
-.drop.over{border-color:var(--accent);color:var(--accent)}
-.status{position:fixed;left:0;right:0;bottom:0;background:var(--panel);color:var(--ink);border-top:1px solid var(--line);padding:8px max(3vw,16px);font-size:14px;display:flex;gap:12px;align-items:center;z-index:9}
+.drop.over{border-color:var(--accent);color:var(--accent)}.drop.err{border-color:var(--flag)}
+.err-msg{color:var(--flag);font-size:14px;margin:8px 0 0}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:500}
+button.danger,.btn.danger{color:var(--flag);border-color:rgba(255,107,107,.45)}
+.note.info{border-left-color:var(--accent)}
+.stepnav{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:36px 0 0;padding-top:18px;border-top:1px solid var(--line)}.stepnav .sp{flex:1}
+.running{color:var(--accent)}
+.status{position:fixed;right:16px;bottom:16px;max-width:min(620px,calc(100% - 32px));background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.6);padding:8px 10px 8px 16px;font-size:14px;display:flex;gap:12px;align-items:center;z-index:9}
 .status[hidden]{display:none}.status button{background:transparent;color:var(--ink);border-color:var(--line);min-height:32px;padding:4px 10px}
 .prog{flex:none;width:140px;height:4px;background:var(--line);border-radius:2px;overflow:hidden}.prog i{display:block;height:100%;background:var(--accent);width:0}
 .empty{background:var(--panel);border-radius:8px;padding:28px;text-align:center;color:var(--muted)}
 .stale{color:var(--flag);font-size:13px;font-weight:500}
 .note{border:1px solid var(--line);border-left:3px solid var(--flag);border-radius:6px;padding:10px 14px;margin:0 0 16px;max-width:760px;font-size:14px}
 .top a.btn.on{border-color:var(--ink)}
-td.act div{display:flex;flex-direction:column;gap:4px;align-items:stretch}
+td.act{padding-left:14px;padding-right:0}td.act div{display:flex;flex-direction:column;gap:6px;align-items:stretch;white-space:nowrap}
 td.act button{min-height:30px;padding:3px 10px;font-size:13px;justify-content:center}
 details.menu{position:relative}details.menu>summary{list-style:none;cursor:pointer}details.menu>summary::-webkit-details-marker{display:none}
 details.menu .pop{position:absolute;right:0;top:46px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;width:min(340px,90vw);box-shadow:0 8px 24px rgba(0,0,0,.6);z-index:6}
@@ -102,7 +108,7 @@ a{color:var(--accent)}
 .doc code{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:13px}
 .toc{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 4px;font-size:14px}
 dl.gl{margin:0}.gl-item{padding:10px 0;border-bottom:1px solid var(--line)}.gl-item dt{font-weight:600}.gl-item dd{margin:3px 0 0;color:var(--muted)}
-@media(max-width:720px){.top{position:static}.bar{gap:8px}.bar .btn,.bar>button,.lang button{min-height:34px;padding:4px 10px;font-size:14px}.hero{grid-template-columns:1fr}.legend{grid-template-columns:repeat(2,minmax(0,1fr))}.kv td:first-child{width:120px}}
+@media(max-width:720px){.top{position:static}.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}.tile .v{font-size:19px}.steps{-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent)}.status{left:16px;right:16px}.bar{gap:8px}.bar .btn,.bar>button,.lang button{min-height:34px;padding:4px 10px;font-size:14px}.hero{grid-template-columns:1fr}.legend{grid-template-columns:repeat(2,minmax(0,1fr))}.kv td:first-child{width:120px}}
 @media(prefers-reduced-motion:no-preference){.prog i{transition:width .2s}}
 </style>
 </head>
@@ -1255,7 +1261,7 @@ const engLabel = () => (ENGERR ? L('Engine unavailable', 'Moteur indisponible') 
 call('version', {}).then((v) => { worker._alive = true; ENGV = v; $('#engv').textContent = engLabel(); }).catch(() => { ENGERR = true; $('#engv').textContent = engLabel(); });
 async function job(label, task, p) {
   if (busy) { toast(L('Another computation is running.', 'Un autre calcul est en cours.')); return null; }
-  busy = label; status(label, 0, true); refreshButtons();
+  busy = label; status(label, 0, true); refreshButtons(); markRunning(task);
   const t0 = performance.now();
   try {
     const out = await call(task, p, (f) => status(label, f, true));
@@ -1264,14 +1270,18 @@ async function job(label, task, p) {
     return out;
   } catch (e) {
     if (e.message !== 'cancelled') status(L(`${label} failed: ${e.message}`, `${label} : échec, ${e.message}`), null, false);
+    busy = null; render();
     return null;
   } finally { busy = null; refreshButtons(); }
 }
 $('#cancelJob').addEventListener('click', () => {
   worker.terminate(); for (const [, j] of pending) j.reject(new Error('cancelled')); pending.clear();
   worker = spawn(false); call('version', {}).then(() => { worker._alive = true; });
-  busy = null; status(L('Computation cancelled.', 'Calcul annulé.'), null, false); refreshButtons();
+  busy = null; status(L('Computation cancelled.', 'Calcul annulé.'), null, false); refreshButtons(); render();
 });
+// Show "computing" where the result will appear, not only in the status bar
+const RUNNING_TASK = { holdout: 'holdout', placebos: 'placebos', analysis: 'analysis', sensitivity: 'sensitivity' };
+function markRunning(task) { const k = RUNNING_TASK[task]; if (!k) return; $$(`[data-pending="${k}"]`).forEach((e) => { e.hidden = false; e.classList.add('running'); e.textContent = L('Computing…', 'Calcul en cours…'); }); }
 function refreshButtons() { $$('[data-run]').forEach((b) => { b.disabled = !!busy || b.dataset.block === '1'; }); }
 
 // ======================================================================
@@ -1465,7 +1475,8 @@ function stepStatus(k) {
 }
 function renderSteps() {
   const cur = route();
-  $('#steps').innerHTML = STEPS.map(([k, en, fr], i) => { const [c, t] = stepStatus(k); return `<a href="#${k}" class="${k === cur ? 'on' : ''}"><b>${i + 1}. ${L(en, fr)}</b><span class="${c}">${esc(t) || '&nbsp;'}</span></a>`; }).join('');
+  $('#steps').innerHTML = STEPS.map(([k, en, fr], i) => { const [c, t] = stepStatus(k); return `<a href="#${k}" class="${k === cur ? 'on' : ''}"${k === cur ? ' aria-current="step"' : ''}><b>${i + 1}. ${L(en, fr)}</b><span class="${c}">${esc(t) || '&nbsp;'}</span></a>`; }).join('');
+  const s = $('#steps'), a = $('#steps a.on'); if (a && s.scrollWidth > s.clientWidth) s.scrollLeft = Math.max(0, a.offsetLeft - (s.clientWidth - a.offsetWidth) / 2);
 }
 function renderChrome() {
   document.documentElement.lang = LANG;
@@ -1488,12 +1499,20 @@ function render() {
   if (r === 'glossary') { vGlossary(); return; }
   if (r !== 'data' && !S.data) { view.innerHTML = `<div class="empty">${L('Import a dataset first.', "Importez d'abord un jeu de données.")} <a href="#data">${L('Go to Data', 'Aller à Données')}</a></div>`; return; }
   ({ data: vData, design: vDesign, covariates: vCovs, validation: vVal, sheet: vSheet, analysis: vAnalysis, sensitivity: vSens })[r]();
+  if (S.data) view.insertAdjacentHTML('beforeend', stepNav(r));
   refreshButtons();
+}
+function stepNav(k) {
+  const i = STEPS.findIndex((s) => s[0] === k); if (i < 0) return '';
+  const lab = (j) => `${j + 1}. ${L(STEPS[j][1], STEPS[j][2])}`;
+  const prev = i > 0 ? `<a class="btn" href="#${STEPS[i - 1][0]}">← ${lab(i - 1)}</a>` : '';
+  const next = i < STEPS.length - 1 ? `<a class="btn" href="#${STEPS[i + 1][0]}">${L('Next', 'Suivant')}${L(': ', ' : ')}${lab(i + 1)} →</a>` : '';
+  return `<nav class="stepnav" aria-label="${esc(L('Steps', 'Étapes'))}">${prev}<span class="sp"></span>${next}</nav>`;
 }
 window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
 function setLang(l) { if (l === LANG || (l !== 'en' && l !== 'fr')) return; LANG = l; try { localStorage.setItem(LKEY, l); } catch (e) { /* storage unavailable */ } render(); }
 $$('#langSw button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
-const lockNote = () => (frozen() ? `<p class="stale">${L('The test sheet is frozen: settings are locked. Amend it on the Test sheet step, with a reason.', "La fiche de test est figée : les réglages sont verrouillés. Amendez-la à l'étape Fiche de test, avec un motif.")}</p>` : '');
+const lockNote = () => (frozen() ? `<div class="note info">${L('The test sheet is frozen, so these settings are locked.', 'La fiche de test est figée : ces réglages sont verrouillés.')} <a href="#sheet">${L('Amend the test sheet', 'Amender la fiche')}</a></div>` : '');
 
 // ---------------- 1. Data
 function vData() {
@@ -1503,6 +1522,8 @@ function vData() {
     <div class="field wide"><div class="drop" id="drop">${L('Drop a .csv or .xlsx file here, or', 'Déposez un fichier .csv ou .xlsx ici, ou')} <label class="btn" style="display:inline-flex">${L('Choose file', 'Choisir un fichier')}<input type="file" id="file" accept=".csv,.tsv,.txt,.xlsx" hidden></label></div></div>
     <div class="field wide" id="xlsxPick" hidden></div>
   </div>
+  <p class="err-msg" id="importErr" role="alert" hidden></p>
+  ${d ? '' : `<div class="row"><button type="button" id="exampleGo">${L('Try with an example dataset', 'Essayer avec un jeu d\'exemple')}</button><span class="small muted">${L('Synthetic daily data, 14 months, with a +20% effect from 1 Sep 2026.', 'Données journalières synthétiques sur 14 mois, avec un effet de +20 % à partir du 1 sept. 2026.')}</span></div>`}
   <details><summary class="small muted" style="cursor:pointer">${L('Paste a table instead', 'Coller un tableau à la place')}</summary><div class="field" style="margin-top:8px"><textarea id="paste" rows="5" placeholder="${esc(L('Paste cells copied from a spreadsheet (tab separated), header row first', "Collez des cellules copiées d'un tableur (séparées par des tabulations), ligne d'en-tête en premier"))}"></textarea></div><div class="row"><button type="button" id="pasteGo">${L('Import pasted table', 'Importer le tableau collé')}</button></div></details>`;
   if (d) {
     const q = qc(); const nd = d.dates.length; const g = q.gaps; const nDup = d.dups.length; const nb = d.badDates;
@@ -1529,9 +1550,36 @@ function vData() {
     mount('kpiFig', { n: y.length, dates: d.dates, layers: [{ y, color: 'ink' }], marks: sp, markY: y, tip: (i) => [[S.design.kpi, num(y[i], 1)], sp.includes(i) ? [L('Flag', 'Alerte'), L('isolated spike', 'pic isolé')] : null] });
   }
 }
+function importError(msg) {
+  const t = L(`Import failed: ${msg}`, `Échec de l'import : ${msg}`); const el = $('#importErr');
+  if (el) { el.textContent = t; el.hidden = false; $('#drop') && $('#drop').classList.add('err'); } else status(t, null, false);
+}
 function importRows(rows, source) {
   try { setData(buildDataset(rows, source)); toast(L(`Imported ${S.data.dates.length} days from ${source}.`, `${S.data.dates.length} jours importés depuis ${source}.`)); render(); }
-  catch (e) { status(L(`Import failed: ${e.message}`, `Échec de l'import : ${e.message}`), null, false); }
+  catch (e) { importError(e.message); }
+}
+// Example dataset: synthetic, seeded, with a +20% uplift from 2026-09-01 to 2026-10-15
+function exampleRows() {
+  let a = 7; const rnd = () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const gauss = (s) => s * Math.sqrt(-2 * Math.log(rnd() || 1e-12)) * Math.cos(2 * Math.PI * rnd());
+  const rows = [['date', 'kpi_orders', 'cov_category_demand', 'cov_competitor', 'cov_weather', 'cov_brand_searches', 'cov_constant']];
+  const t0 = Date.UTC(2025, 8, 1), DAY = 864e5; let lvl = 0;
+  for (let t = 0; t < 426; t++) {
+    const iso = new Date(t0 + t * DAY).toISOString().slice(0, 10); const wd = [0.85, 1, 1.05, 1.08, 1.04, 0.98, 0.8][new Date(t0 + t * DAY).getUTCDay()];
+    const demand = 1000 + 200 * Math.sin((2 * Math.PI * t) / 365) + gauss(40); const comp = 300 + 0.15 * demand + gauss(15);
+    const weather = 15 + 10 * Math.sin((2 * Math.PI * (t - 100)) / 365) + gauss(2); lvl += gauss(1.5);
+    const post = iso >= '2026-09-01' && iso <= '2026-10-15';
+    const kpi = ((120 + 0.25 * demand + 0.1 * comp + lvl) * wd + gauss(8)) * (post ? 1.2 : 1);
+    const brand = (500 + 0.2 * demand) * (post ? 1.3 : 1) + gauss(20);
+    rows.push([iso, kpi.toFixed(1), demand.toFixed(1), comp.toFixed(1), weather.toFixed(2), brand.toFixed(1), '50']);
+  }
+  return rows;
+}
+function loadExample() {
+  importRows(exampleRows(), L('Example dataset', "Jeu d'exemple"));
+  if (!S.data) return;
+  S.design.intervention = '2026-09-01'; changed('design.intervention'); S.design.postEnd = '2026-10-15'; save(); render();
+  toast(L('Example loaded: intervention on 1 Sep 2026, post-period to 15 Oct 2026. Choose the covariates next.', "Jeu d'exemple chargé : intervention le 1 sept. 2026, post-période jusqu'au 15 oct. 2026. Choisissez ensuite les covariables."));
 }
 async function importFile(f) {
   try {
@@ -1543,9 +1591,10 @@ async function importFile(f) {
       box.innerHTML = `<span>${L('Workbook sheets', 'Feuilles du classeur')}</span><div class="row">${x.sheets.map((s, i) => `<button type="button" data-sh="${i}">${esc(s.name)}</button>`).join('')}</div>`;
       box.querySelectorAll('[data-sh]').forEach((b) => b.addEventListener('click', () => go(x.sheets[+b.dataset.sh])));
     } else importRows(parseCsv(await f.text()), f.name);
-  } catch (e) { status(L(`Import failed: ${e.message}`, `Échec de l'import : ${e.message}`), null, false); }
+  } catch (e) { importError(e.message); }
 }
 function bindImport() {
+  $('#exampleGo') && $('#exampleGo').addEventListener('click', loadExample);
   const drop = $('#drop'), file = $('#file');
   file.addEventListener('change', () => file.files[0] && importFile(file.files[0]));
   drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
@@ -1597,17 +1646,23 @@ function vCovs() {
   const medRatio = median(cands.map((n) => stats[n].ratio).filter(isNum));
   const kpiRatio = p.ok ? mean(ky.slice(p.j0, p.j1 + 1)) / mean(ky.slice(p.i0, p.i1 + 1)) : NaN;
   const sel = selected();
+  const isConst = (n) => (p.ok ? stats[n].distinctPre <= 1 : q.cols[n].constant);
+  const usable = cands.filter((n) => !isConst(n)); const allOn = usable.length > 0 && usable.every((n) => S.covs[n] && S.covs[n].on);
   view.innerHTML = `<h2>${L('Covariates', 'Covariables')}</h2><p class="lead">${L('You draw up the list. For each candidate: category, H-A status (can the intervention move this series?) and a visual check for a level jump at the intervention date.', "Vous dressez la liste. Pour chaque candidate : catégorie, statut H-A (l'intervention peut-elle faire bouger cette série ?) et contrôle visuel d'un saut de niveau à la date d'intervention.")}</p>${lockNote()}
   <div class="tiles"><div class="tile"><div class="k">${L('Selected', 'Retenues')}</div><div class="v">${sel.length}</div></div><div class="tile"><div class="k">${L('Pre-period points', 'Points de pré-période')}</div><div class="v">${p.ok ? p.nPre : NA()}</div></div><div class="tile"><div class="k">${L('Guideline (1 per 10 points)', 'Repère (1 pour 10 points)')}</div><div class="v">${p.ok ? Math.floor(p.nPre / 10) : NA()}</div></div><div class="tile"><div class="k">${L('Post / pre ratio, median · KPI', 'Ratio post / pré, médiane · KPI')}</div><div class="v">${num(medRatio, 2)} · ${num(kpiRatio, 2)}</div></div></div>
-  <div class="row"><button type="button" id="covNone" ${fz}>${L('Clear selection', 'Tout décocher')}</button><span class="small muted">${L('Bias: an exposed covariate pushed up by the action raises the counterfactual and underestimates the uplift.', "Biais : une covariable exposée, poussée à la hausse par l'action, relève le contrefactuel et sous-estime l'uplift.")}</span></div>
+  <div class="row"><button type="button" id="covAll" ${fz || (usable.length ? '' : 'disabled')}>${allOn ? L('Uncheck all', 'Tout décocher') : L('Check all', 'Tout cocher')}</button><span class="small muted">${L('Bias: an exposed covariate pushed up by the action raises the counterfactual and underestimates the uplift.', "Biais : une covariable exposée, poussée à la hausse par l'action, relève le contrefactuel et sous-estime l'uplift.")}</span></div>
   <div class="scroll"><table><thead><tr><th>${L('Use', 'Retenir')}</th><th>${L('Column', 'Colonne')}</th><th>${L('Category', 'Catégorie')}</th><th>${L('H-A status', 'Statut H-A')}</th><th class="n">${L('Corr. pre', 'Corr. pré')}</th><th class="n">${L('Post / pre', 'Post / pré')}</th><th class="n">${L('Distinct pre', 'Distinctes pré')}</th><th>${L('Flags', 'Alertes')}</th><th>${L('Series, intervention marked', 'Série, intervention marquée')}</th></tr></thead><tbody>
   ${cands.map((n) => { const c = S.covs[n] || { on: false, cat: '', status: 'Not reviewed' }; const st = stats[n]; const off = isNum(st.ratio) && isNum(medRatio) && medRatio && Math.abs(st.ratio / medRatio - 1) > 0.2;
-    return `<tr class="${c.on && c.status === 'Exposed' ? 'warnrow' : ''}"><td><input type="checkbox" data-cov="${esc(n)}" data-f="on" ${c.on ? 'checked' : ''} ${fz} aria-label="${esc(L(`Use ${n}`, `Retenir ${n}`))}" style="width:18px;height:18px;accent-color:var(--accent)"></td><td>${esc(n)}</td>
+    return `<tr class="${c.on && c.status === 'Exposed' ? 'warnrow' : ''}"><td><input type="checkbox" data-cov="${esc(n)}" data-f="on" ${c.on ? 'checked' : ''} ${fz || (isConst(n) && !c.on ? 'disabled' : '')} aria-label="${esc(L(`Use ${n}`, `Retenir ${n}`))}"${isConst(n) ? ` title="${esc(L('Constant over the pre-period: the engine drops it', 'Constante sur la pré-période : le moteur l\'écarte'))}"` : ''} style="width:20px;height:20px;accent-color:var(--accent)"></td><td>${esc(n)}</td>
     <td><select data-cov="${esc(n)}" data-f="cat" ${fz}>${CATEGORIES.map((x) => `<option value="${esc(x)}" ${x === c.cat ? 'selected' : ''}>${x ? esc(catLabel(x)) : L('Choose', 'Choisir')}</option>`).join('')}</select></td>
     <td><select data-cov="${esc(n)}" data-f="status" ${fz}>${STATUSES.map((x) => `<option value="${esc(x)}" ${x === c.status ? 'selected' : ''}>${esc(stLabel(x))}</option>`).join('')}</select></td>
     <td class="n">${num(st.r, 2)}</td><td class="n">${off ? `<span class="chip flag">${num(st.ratio, 2)}</span>` : num(st.ratio, 2)}</td><td class="n">${st.distinctPre}</td><td>${chips(colFlags(q.cols[n]))}</td><td>${spark(d.cols[n], p.j0)}</td></tr>`; }).join('')}
   </tbody></table></div><p class="small muted">${L('Post / pre ratio highlighted when more than 20% away from the median of all columns. Constant series over the pre-period are dropped by the engine.', "Ratio post / pré surligné quand il s'écarte de plus de 20 % de la médiane de toutes les colonnes. Les séries constantes sur la pré-période sont écartées par le moteur.")}</p>`;
-  $('#covNone') && $('#covNone').addEventListener('click', () => { for (const n of Object.keys(S.covs)) S.covs[n].on = false; changed(); });
+  $('#covAll').addEventListener('click', () => {
+    if (allOn) { for (const n of Object.keys(S.covs)) S.covs[n].on = false; }
+    else for (const n of usable) { S.covs[n] = S.covs[n] || { on: false, cat: '', status: 'Not reviewed' }; S.covs[n].on = true; }
+    changed();
+  });
 }
 
 // ---------------- 4. Validation
@@ -1634,9 +1689,9 @@ function vVal() {
   if (R.holdout) {
     const o = R.holdout.out;
     h += `<div class="tiles"><div class="tile"><div class="k">${L('MAPE (guideline under 10%)', 'MAPE (repère : moins de 10 %)')}</div><div class="v">${pct(o.mape, 1, false)}</div></div><div class="tile"><div class="k">${L('Points inside the 95% interval', "Points dans l'intervalle à 95 %")}</div><div class="v">${pct(o.coverage, 0, false)}</div></div><div class="tile"><div class="k">${L('Bias (observed vs predicted)', 'Biais (observé vs prédit)')}</div><div class="v">${pct(o.bias)}</div></div><div class="tile"><div class="k">${L('Confidence of a fake effect', "Confiance d'un faux effet")}</div><div class="v">${pct(o.probCausal, 1, false)}</div></div></div>
-    <div class="fig" id="holdFig"></div><div class="row"><button type="button" id="holdPng">PNG</button></div>`;
-  } else h += `<p class="muted small">${L('Not run.', 'Non lancé.')}</p>`;
-  h += `</div><div class="sec"><h3>${L('Placebos and power', 'Placebos et puissance')}</h3>${st(R.placebo)}`;
+    <p class="small" data-pending="holdout" hidden></p><div class="fig" id="holdFig"></div><div class="row"><button type="button" id="holdPng">${L('Chart (PNG)', 'Graphique (PNG)')}</button></div>`;
+  } else h += `<p class="muted small" data-pending="holdout">${L('Not run.', 'Non lancé.')}</p>`;
+  h += `</div><div class="sec"><h3>${L('Placebos and power', 'Placebos et puissance')}</h3>${st(R.placebo)}${R.placebo ? '<p class="small" data-pending="placebos" hidden></p>' : ''}`;
   if (R.placebo) {
     const o = R.placebo.out; const k = o.nRobust;
     const mde = o.mde == null ? L('above 20%', 'au-delà de 20 %') : (o.mdeAtGridFloor ? L('at or below ', 'au plus ') : '') + pct(o.mde, 0);
@@ -1645,8 +1700,8 @@ function vVal() {
     ${o.placebos.map((x) => `<tr class="${x.band === 'robust' ? 'warnrow' : ''}"><td>${span(fShort(ds[x.window[0]]), fShort(ds[x.window[1]]))}</td><td class="n">${x.trainLength}</td><td class="n">${pct(x.relEffect)}</td><td class="n">[${pct(x.relEffectLower)} ; ${pct(x.relEffectUpper)}]</td><td class="n">${pct(x.probCausal, 1, false)}</td><td>${bandName(x.band)}</td><td class="n">${pct(x.mape, 1, false)}</td></tr>`).join('')}
     </tbody></table></div>
     <h3>${L('Detection of injected uplifts', 'Détection des uplifts injectés')}</h3><div class="scroll"><table style="max-width:520px"><thead><tr><th>${L('Injected uplift', 'Uplift injecté')}</th><th class="n">${L('Windows detected', 'Fenêtres détectées')}</th><th></th></tr></thead><tbody>${o.detection.map((x) => `<tr><td>${pct(x.uplift, 0)}</td><td class="n">${pct(x.share, 0, false)}</td><td><span class="bar-in"><i style="width:${Math.round((x.share || 0) * 100)}%"></i></span></td></tr>`).join('')}</tbody></table></div>
-    <div class="row"><button type="button" id="plCsv">CSV</button></div>` : `<p class="muted small">${L('No window was run.', 'Aucune fenêtre lancée.')}</p>`;
-  } else h += `<p class="muted small">${L('Not run.', 'Non lancé.')}</p>`;
+    <div class="row"><button type="button" id="plCsv">${L('Placebos (CSV)', 'Placebos (CSV)')}</button></div>` : `<p class="muted small">${L('No window was run.', 'Aucune fenêtre lancée.')}</p>`;
+  } else h += `<p class="muted small" data-pending="placebos">${L('Not run.', 'Non lancé.')}</p>`;
   h += `</div><div class="sec"><h3>${L('Protocol checks', 'Contrôles du protocole')}</h3>${flagList(protocolFlags())}</div>`;
   view.innerHTML = h;
   $('#runAll').addEventListener('click', async () => { await runHoldout(); if (valCfg().wins.length) await runPlacebos(); });
@@ -1707,16 +1762,16 @@ function sheetModel() {
   const covTxt = (n) => `${n} (${catLabel(s.covs[n].cat) || L('no category', 'sans catégorie')}, ${stLabel(s.covs[n].status)})`;
   const mde = s.placebo ? (s.placebo.mde == null ? L('above 20%', 'au-delà de 20 %') : (s.placebo.mdeAtGridFloor ? '≤ ' : '') + pct(s.placebo.mde, 0)) : '';
   const rows = [
-    [L('Decision informed', 'Décision éclairée'), f.decision], [L('Event tested', 'Événement testé'), f.event], ['H0', f.h0], ['H1', f.h1],
-    [L('KPI priority 1', 'KPI priorité 1'), `${d.kpi} · ${s.source} · ${L('daily', 'journalier')}`], [L('KPI priority 2', 'KPI priorité 2'), f.kpi2], [L('KPI priority 3', 'KPI priorité 3'), f.kpi3],
+    [L('Decision informed', 'Décision éclairée'), f.decision, 1], [L('Event tested', 'Événement testé'), f.event, 1], ['H0', f.h0, 1], ['H1', f.h1, 1],
+    [L('KPI priority 1', 'KPI priorité 1'), `${d.kpi} · ${s.source} · ${L('daily', 'journalier')}`], [L('KPI priority 2', 'KPI priorité 2'), f.kpi2, 1], [L('KPI priority 3', 'KPI priorité 3'), f.kpi3, 1],
     [L('Pre-period', 'Pré-période'), p.ok ? L(`${fDate(d.preStart)} to ${fDate(d.preEnd)} (${p.nPre} days)`, `du ${fDate(d.preStart)} au ${fDate(d.preEnd)} (${p.nPre} jours)`) : L('incomplete', 'incomplète')],
     [L('Post-period', 'Post-période'), p.ok ? L(`${fDate(d.intervention)} to ${fDate(d.postEnd)} (${p.nPost} days)`, `du ${fDate(d.intervention)} au ${fDate(d.postEnd)} (${p.nPost} jours)`) : L('incomplete', 'incomplète')],
     [L('Covariates retained', 'Covariables retenues'), on.length ? on.map(covTxt).join('; ') : L('none', 'aucune')],
-    [L('Covariates left out', 'Covariables écartées'), off.length ? off.map(covTxt).join('; ') : L('none', 'aucune')],
+    [L('Covariates left out', 'Covariables écartées'), off.length ? off.join(', ') : L('none', 'aucune')],
     [L('Model', 'Modèle'), L(`Weekly seasonality ${d.weekly ? 'on (7 days)' : 'off'} · level prior ${d.prior} · ${d.niter} iterations · seed ${d.seed} · static regression`, `Saisonnalité hebdomadaire ${d.weekly ? 'activée (7 jours)' : 'désactivée'} · prior de niveau ${dec(d.prior)} · ${d.niter} itérations · seed ${d.seed} · régression statique`)],
     [L('Validation settings', 'Réglages de validation'), L(`Hold-out ${s.val.holdout} days · history from ${fDate(s.val.valStart)} · placebo windows ${s.val.L} days, min. history ${s.val.minHist} (rule ${s.val.rule})${s.val.overlap ? `, overlap every ${s.val.stride} days` : ''} · ${s.val.windows} windows`, `Hold-out ${s.val.holdout} jours · historique depuis le ${fDate(s.val.valStart)} · fenêtres placebo de ${s.val.L} jours, historique min. ${s.val.minHist} (règle ${s.val.rule})${s.val.overlap ? `, chevauchement tous les ${s.val.stride} jours` : ''} · ${s.val.windows} fenêtres`)],
     [L('Validation results', 'Résultats de validation'), [s.holdout ? L(`Hold-out MAPE ${pct(s.holdout.mape, 1, false)}, coverage ${pct(s.holdout.coverage, 0, false)}, bias ${pct(s.holdout.bias)}`, `MAPE du hold-out ${pct(s.holdout.mape, 1, false)}, couverture ${pct(s.holdout.coverage, 0, false)}, biais ${pct(s.holdout.bias)}`) : L('Hold-out not run', 'Hold-out non lancé'), s.placebo ? L(`placebos ${s.placebo.robust} robust of ${s.placebo.n}, MDE ${mde}`, `placebos : ${s.placebo.robust} robuste${s.placebo.robust > 1 ? 's' : ''} sur ${s.placebo.n}, MDE ${mde}`) : L('placebos not run', 'placebos non lancés')].join(' · ')],
-    [L('Confounding events, pre', 'Événements parasites, pré'), f.eventsPre], [L('Confounding events, post', 'Événements parasites, post'), f.eventsPost], [L('Tracking prerequisites', 'Prérequis tracking'), f.tracking],
+    [L('Confounding events, pre', 'Événements parasites, pré'), f.eventsPre, 1], [L('Confounding events, post', 'Événements parasites, post'), f.eventsPost, 1], [L('Tracking prerequisites', 'Prérequis tracking'), f.tracking, 1],
     [L('Reading criteria', 'Critères de lecture'), L(`Grid: Robust ≥ 95% with interval excluding zero · Favorable ≥ 90% · Trend 70% to 90% · Inconclusive < 70%.${f.threshold !== '' && f.threshold != null ? ` Business threshold +${f.threshold}% on the lower bound.` : ''}`, `Grille : Robuste ≥ 95 % avec intervalle hors zéro · Favorable ≥ 90 % · Tendance 70 à 90 % · Non concluant < 70 %.${f.threshold !== '' && f.threshold != null ? ` Seuil business +${dec(f.threshold)} % sur la borne basse.` : ''}`)],
     ['Go / No-go', s.go ? `${s.go}${s.go === 'No-go' && s.correction ? `${L(': ', ' : ')}${s.correction}` : ''}` : ''],
     ['Notes', s.notes],
@@ -1735,21 +1790,23 @@ function vSheet() {
   const fz = frozen(); const { s, rows } = sheetModel();
   view.innerHTML = `<h2>${L('Test sheet', 'Fiche de test')}</h2><p class="lead">${L('Filled from the previous steps. Freezing locks the settings, stamps the time and the data fingerprint, and unlocks the analysis. Any later change goes through the deviation log.', "Remplie à partir des étapes précédentes. Figer verrouille les réglages, horodate la fiche, enregistre l'empreinte des données et débloque l'analyse. Tout changement ultérieur passe par le journal des écarts.")}</p>
   <div class="tiles"><div class="tile"><div class="k">${L('Status', 'Statut')}</div><div class="v">${fz ? L('Frozen', 'Figée') : L('Draft', 'Brouillon')}</div></div><div class="tile"><div class="k">${fz ? L('Frozen on (UTC)', 'Figée le (UTC)') : L('Data fingerprint', 'Empreinte des données')}</div><div class="v" style="font-size:17px">${fz ? esc(fStamp(s.at)) : esc(S.data.hash)}</div></div></div>
-  <div class="scroll"><table class="kv"><tbody>${rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v ? esc(v).replace(/\n/g, '<br>') : `<span class="muted">${L('not filled', 'non renseigné')}</span>`}</td></tr>`).join('')}</tbody></table></div>
-  <h3>${fz ? L('Protocol checks at freeze', 'Contrôles du protocole au gel') : L('Protocol checks', 'Contrôles du protocole')}</h3>${flagList(flagsOf(s))}
-  <div class="sec"><h3>${L('Decision', 'Décision')}</h3><div class="grid">
+  <div class="sec" style="margin-top:8px"><h3>${L('Decision', 'Décision')}</h3><div class="grid" style="align-items:start">
     <label class="field"><span>Go / No-go</span><select data-k="sheet.go" ${fz ? 'disabled' : ''}><option value="">${L('Not decided', 'Non décidé')}</option><option value="Go" ${S.sheet.go === 'Go' ? 'selected' : ''}>Go</option><option value="No-go" ${S.sheet.go === 'No-go' ? 'selected' : ''}>No-go</option></select></label>
     <label class="field"><span>${L('Correction if no-go', 'Correction en cas de no-go')}</span><textarea data-k="sheet.correction" data-live="1" ${fz ? 'disabled' : ''}>${esc(S.sheet.correction)}</textarea></label>
     <label class="field wide"><span>Notes</span><textarea data-k="sheet.notes" data-live="1" ${fz ? 'disabled' : ''}>${esc(S.sheet.notes)}</textarea></label></div>
-  <div class="row">${fz ? `<input type="text" id="amendReason" placeholder="${esc(L('Reason for the amendment (required)', "Motif de l'amendement (obligatoire)"))}" style="max-width:420px"><button type="button" id="amend">${L('Unfreeze to amend', 'Dégeler pour amender')}</button>` : `<button type="button" class="primary" id="freeze">${L('Freeze the test sheet', 'Figer la fiche de test')}</button>`}
+  <div class="row">${fz ? `<input type="text" id="amendReason" placeholder="${esc(L('Reason for the amendment (required)', "Motif de l'amendement (obligatoire)"))}" style="max-width:420px"><button type="button" id="amend">${L('Unfreeze to amend', 'Dégeler pour amender')}</button>` : `<button type="button" class="primary" id="freeze">${L('Freeze and run the analysis', "Figer et lancer l'analyse")}</button>`}
   <button type="button" id="mdSave">${L('Export Markdown', 'Exporter en Markdown')}</button><button type="button" id="mdCopy">${L('Copy Markdown', 'Copier le Markdown')}</button></div></div>
+  <h3>${L('Sheet content', 'Contenu de la fiche')}</h3>
+  <div class="scroll"><table class="kv"><tbody>${rows.map(([k, v, fromDesign]) => `<tr><td>${esc(k)}</td><td>${v ? esc(v).replace(/\n/g, '<br>') : `<span class="muted">${L('not filled', 'non renseigné')}</span>${fromDesign && !fz ? ` · <a href="#design">${L('Fill in on Design', 'Compléter dans Design')}</a>` : ''}`}</td></tr>`).join('')}</tbody></table></div>
+  <h3>${fz ? L('Protocol checks at freeze', 'Contrôles du protocole au gel') : L('Protocol checks', 'Contrôles du protocole')}</h3>${flagList(flagsOf(s))}
   <div class="sec"><h3>${L('Deviation log', 'Journal des écarts')}</h3>${S.sheet.deviations.length ? `<div class="scroll"><table><thead><tr><th>${L('Date (UTC)', 'Date (UTC)')}</th><th>${L('Reason', 'Motif')}</th><th>${L('Changes at the next freeze', 'Changements au gel suivant')}</th></tr></thead><tbody>${S.sheet.deviations.map((d) => `<tr><td>${esc(fStamp(d.at))}</td><td>${esc(d.reason)}</td><td>${d.changes ? esc(d.changes.join('; ') || L('none', 'aucun')) : `<span class="muted">${L('pending', 'en attente')}</span>`}</td></tr>`).join('')}</tbody></table></div>` : `<p class="muted small">${L('No deviation.', 'Aucun écart.')}</p>`}</div>`;
   $('#freeze') && $('#freeze').addEventListener('click', () => {
     if (!periods().ok) { toast(L('Set consistent periods before freezing.', 'Réglez des périodes cohérentes avant de figer.')); return; }
     const snap = snapshot(); const last = S.sheet.deviations[S.sheet.deviations.length - 1];
     if (last && !last.changes && S.sheet.prevFreeze) last.changes = diffSnap(S.sheet.prevFreeze, snap);
     S.sheet.frozen = snap; S.sheet.prevFreeze = null; R.analysis = null; R.sens = null; save(); render();
-    histSave().then((ok) => toast(ok ? L('Test sheet frozen and saved to History. The analysis is unlocked.', "Fiche de test figée et enregistrée dans l'historique. L'analyse est débloquée.") : L('Test sheet frozen. The analysis is unlocked. This browser could not save it to History.', "Fiche de test figée. L'analyse est débloquée. Ce navigateur n'a pas pu l'enregistrer dans l'historique.")));
+    histSave().then((ok) => { if (!ok) toast(L('Test sheet frozen. This browser could not save it to History.', "Fiche de test figée. Ce navigateur n'a pas pu l'enregistrer dans l'historique.")); });
+    location.hash = 'analysis';
   });
   $('#amend') && $('#amend').addEventListener('click', () => {
     const r = $('#amendReason').value.trim(); if (!r) { toast(L('Write the reason for the amendment first.', "Écrivez d'abord le motif de l'amendement.")); $('#amendReason').focus(); return; }
@@ -1760,6 +1817,7 @@ function vSheet() {
 }
 
 // ---------------- 6. Analysis
+const autoRun = new Set();
 function frozenRun() {
   const s = S.sheet.frozen; const d = s.design; const p = periods(d);
   const names = Object.keys(s.covs).filter((n) => s.covs[n].on && S.data.cols[n]);
@@ -1769,8 +1827,14 @@ function vAnalysis() {
   if (!frozen()) { view.innerHTML = `<h2>${L('Analysis', 'Analyse')}</h2><div class="empty">${L('The analysis runs on a frozen test sheet, so the reading criteria are fixed before the effect is seen.', "L'analyse tourne sur une fiche de test figée : les critères de lecture sont fixés avant de voir l'effet.")} <a href="#sheet">${L('Go to the test sheet', 'Aller à la fiche de test')}</a></div>`; return; }
   const { d } = frozenRun(); const A = R.analysis && R.analysis.sig === S.sheet.frozen.at ? R.analysis.out : null; const ds = S.data.dates;
   let h = `<h2>${L('Analysis', 'Analyse')}</h2><p class="lead">${L(`${esc(d.kpi)} · intervention ${fDate(d.intervention)} · settings from the sheet frozen on ${esc(fStamp(S.sheet.frozen.at))} UTC.`, `${esc(d.kpi)} · intervention le ${fDate(d.intervention)} · réglages de la fiche figée le ${esc(fStamp(S.sheet.frozen.at))} UTC.`)}</p>
-  <div class="row"><button type="button" class="primary" data-run id="runA">${A ? L('Run again', 'Relancer') : L('Run the analysis', "Lancer l'analyse")}</button></div>`;
-  if (!A) { view.innerHTML = h + `<div class="empty">${L('Not run yet.', 'Pas encore lancée.')}</div>`; $('#runA').addEventListener('click', runAnalysis); return; }
+  <div class="row"><button type="button" class="${A ? '' : 'primary'}" data-run id="runA">${A ? L('Run again', 'Relancer') : L('Run the analysis', "Lancer l'analyse")}</button>${A ? '<span class="small" data-pending="analysis" hidden></span>' : ''}</div>`;
+  if (!A) {
+    const auto = !busy && !autoRun.has(S.sheet.frozen.at);
+    view.innerHTML = h + `<div class="empty" data-pending="analysis">${auto || busy === L('Analysis', 'Analyse') ? L('Computing…', 'Calcul en cours…') : L('Not run yet.', 'Pas encore lancée.')}</div>`;
+    $('#runA').addEventListener('click', runAnalysis);
+    if (auto) { autoRun.add(S.sheet.frozen.at); setTimeout(runAnalysis, 0); }
+    return;
+  }
   const sm = A.summary, av = sm.average, cu = sm.cumulative; const thr = d.framing.threshold;
   const ci = (a, b, f) => `[${f(a)} ; ${f(b)}]`;
   h += `<div class="hero"><div><div class="small muted">${L('Relative effect, post-period average', 'Effet relatif, moyenne de la post-période')}</div><div class="big">${pct(av.relEffect)}</div><div>${L(`95% interval [${pct(av.relEffectLower)} ; ${pct(av.relEffectUpper)}] · confidence ${pct(sm.probCausal, 1, false)}`, `Intervalle à 95 % [${pct(av.relEffectLower)} ; ${pct(av.relEffectUpper)}] · confiance ${pct(sm.probCausal, 1, false)}`)}</div>
@@ -1779,7 +1843,7 @@ function vAnalysis() {
   <h3>${L('Observed, counterfactual, pointwise and cumulative effect', 'Observé, contrefactuel, effet ponctuel et cumulé')}</h3>
   <div class="fig" id="f1"></div><div class="fig s" id="f2"></div><div class="fig s" id="f3"></div>
   <p class="small muted">${L('Light line: observed. Blue dashed: counterfactual prediction with its 95% interval. Dashed vertical line: intervention.', 'Trait clair : observé. Tirets bleus : contrefactuel prédit et son intervalle à 95 %. Pointillé vertical : intervention.')}</p>
-  <div class="row"><button type="button" id="aPng">PNG</button><button type="button" id="aCsv">${L('CSV results', 'CSV des résultats')}</button><button type="button" id="aR">${L('R script', 'Script R')}</button><button type="button" id="aIn">${L('Input CSV for R', "CSV d'entrée pour R")}</button><button type="button" id="aRcopy">${L('Copy R script', 'Copier le script R')}</button><button type="button" id="aPpt">${L('Slides (PowerPoint)', 'Slides (PowerPoint)')}</button></div>
+  <div class="row"><button type="button" id="aPng">${L('Charts (PNG)', 'Graphiques (PNG)')}</button><button type="button" id="aCsv">${L('CSV results', 'CSV des résultats')}</button><button type="button" id="aR">${L('R script', 'Script R')}</button><button type="button" id="aIn">${L('Input CSV for R', "CSV d'entrée pour R")}</button><button type="button" id="aRcopy">${L('Copy R script', 'Copier le script R')}</button><button type="button" id="aPpt">${L('Slides (PowerPoint)', 'Slides (PowerPoint)')}</button></div>
   <h3>${L('Summary', 'Synthèse')}</h3><div class="scroll"><table style="max-width:760px"><thead><tr><th></th><th class="n">${L('Average', 'Moyenne')}</th><th class="n">${L('Cumulative', 'Cumul')}</th></tr></thead><tbody>
   <tr><td>${L('Actual', 'Observé')}</td><td class="n">${num(av.actual, 1)}</td><td class="n">${num(cu.actual, 0)}</td></tr>
   <tr><td>${L('Prediction (s.d.)', 'Prédiction (é.-t.)')}</td><td class="n">${num(av.pred, 1)} (${num(av.predSd, 1)})</td><td class="n">${num(cu.pred, 0)} (${num(cu.predSd, 0)})</td></tr>
@@ -1836,7 +1900,7 @@ function vSens() {
   let h = `<h2>${L('Sensitivity', 'Sensibilité')}</h2><p class="lead">${L('The result must hold when the debatable choices change: level prior, weekly seasonality, one covariate removed at a time, a later pre-period start. When a variant crosses a threshold of the grid, read at the most prudent level.', "Le résultat doit tenir quand les choix discutables changent : prior de niveau, saisonnalité hebdomadaire, retrait d'une covariable à la fois, début de pré-période plus tardif. Quand une variante franchit un seuil de la grille, lisez au niveau le plus prudent.")}</p>
   <div class="grid"><label class="field"><span>${L('Pre-period start shift (days)', 'Décalage du début de pré-période (jours)')}</span><input type="number" min="1" step="1" data-k="val.shift" value="${esc(shift)}"></label></div>
   <p class="small ${canShift ? 'muted' : 'stale'}">${canShift ? L(`The shifted variant starts on ${fDate(S.data.dates[p.i0 + +shift])}.`, `La variante décalée commence le ${fDate(S.data.dates[p.i0 + +shift])}.`) : L(`Shifted pre-period variant not run: fewer than 56 days would remain (${p.nPre - shift} days).`, `Variante décalée non lancée : il resterait moins de 56 jours (${p.nPre - shift} jours).`)} ${L(`${nl} leave-one-out variants.`, `${nl} variante${nl > 1 ? 's' : ''} avec une covariable retirée.`)}</p>
-  <div class="row"><button type="button" class="primary" data-run id="runS">${E ? L('Run again', 'Relancer') : L('Run sensitivity', 'Lancer la sensibilité')}</button></div>`;
+  <div class="row"><button type="button" class="primary" data-run id="runS">${E ? L('Run again', 'Relancer') : L('Run sensitivity', 'Lancer la sensibilité')}</button><span class="small ${E ? '' : 'muted'}" data-pending="sensitivity" ${E ? 'hidden' : ''}>${E ? '' : L('Not run.', 'Non lancée.')}</span></div>`;
   if (E) {
     const doubt = new Set(names.filter((n) => S.sheet.frozen.covs[n].status === 'Doubtful'));
     const rows = [...E.rows].sort((a, b) => (a.kind === 'drop' && b.kind === 'drop' ? (doubt.has(b.label.slice(8)) - doubt.has(a.label.slice(8))) : 0));
@@ -1844,7 +1908,7 @@ function vSens() {
     ${E.crossesThreshold ? `<p><b>${L(`Read at the most prudent level: ${bandName(E.lowestBand)}.`, `Lecture au niveau le plus prudent : ${bandName(E.lowestBand)}.`)}</b></p>` : ''}
     <div class="scroll"><table><thead><tr><th>${L('Variant', 'Variante')}</th><th class="n">${L('Rel. effect', 'Effet relatif')}</th><th class="n">${L('95% interval', 'Intervalle à 95 %')}</th><th class="n">${L('Confidence', 'Confiance')}</th><th>${L('Band', 'Niveau')}</th><th class="n">${L('Cum. effect', 'Effet cumulé')}</th><th class="n">${L('Pre MAPE', 'MAPE pré')}</th></tr></thead><tbody>
     ${rows.map((r) => `<tr class="${r.kind === 'base' ? 'base' : ''}"><td>${esc(variantLabel(r))}${r.kind === 'drop' && doubt.has(r.label.slice(8)) ? ` <span class="chip">${L('doubtful', 'douteuse')}</span>` : ''}</td><td class="n">${pct(r.relEffect)}</td><td class="n">[${pct(r.relEffectLower)} ; ${pct(r.relEffectUpper)}]</td><td class="n">${pct(r.probCausal, 1, false)}</td><td>${bandName(r.band)}</td><td class="n">${sgn(r.absEffectCum, 0)}</td><td class="n">${pct(r.preMape, 1, false)}</td></tr>`).join('')}
-    </tbody></table></div><div class="row"><button type="button" id="sCsv">CSV</button></div>`;
+    </tbody></table></div><div class="row"><button type="button" id="sCsv">${L('Variants (CSV)', 'Variantes (CSV)')}</button></div>`;
   }
   view.innerHTML = h;
   $('#runS').addEventListener('click', async () => {
@@ -2202,8 +2266,8 @@ function reviveState(s) {
 async function histOpen(id) {
   const e = await histGet(id); if (!e) { toast(L('This test is no longer in the history.', "Ce test n'est plus dans l'historique.")); vHistory(); return; }
   S = reviveState(e.state); clearResults(); save();
+  if (frozen()) autoRun.delete(S.sheet.frozen.at);
   location.hash = 'analysis'; render();
-  if (frozen() && e.result && e.result.frozenAt === S.sheet.frozen.at) runAnalysis();
 }
 const isoDay = () => new Date().toISOString().slice(0, 10);
 async function histExport() {
@@ -2249,7 +2313,7 @@ async function vHistory() {
       return `<tr><td style="white-space:nowrap">${esc(fStamp(t.frozenAt))}${na ? `<br><span class="chip">${L(`${na} amendment${na > 1 ? 's' : ''}`, `${na} amendement${na > 1 ? 's' : ''}`)}</span>` : ''}${here ? ` <span class="chip">${L('open', 'ouvert')}</span>` : ''}</td>
       <td>${esc(t.kpi || '')}</td><td>${esc(t.event || '')}</td><td style="white-space:nowrap">${t.intervention && t.postEnd ? span(fShort(t.intervention), fDate(t.postEnd)) : ''}</td><td class="n">${t.covariates ?? ''}</td>
       <td class="n">${r ? pct(r.relEffect) : `<span class="muted">${L('not run', 'non lancée')}</span>`}</td><td class="n">${r ? `[${pct(r.lower)} ; ${pct(r.upper)}]` : ''}</td><td class="n">${r ? pct(r.probCausal, 1, false) : ''}</td><td>${r ? bandName(r.band) : ''}</td>
-      <td class="act"><div><button type="button" data-hopen="${esc(t.id)}">${L('Reopen', 'Rouvrir')}</button><button type="button" data-hdel="${esc(t.id)}">${L('Delete', 'Supprimer')}</button></div></td></tr>`; }).join('')}
+      <td class="act"><div><button type="button" data-hopen="${esc(t.id)}">${L('Reopen', 'Rouvrir')}</button><button type="button" class="danger" data-hdel="${esc(t.id)}">${L('Delete', 'Supprimer')}</button></div></td></tr>`; }).join('')}
     </tbody></table></div>`;
   }
   view.innerHTML = h; bindHist();
@@ -2287,7 +2351,8 @@ const README = {
   <ul><li>One row per day, one date column, one column per series (wide format).</li>
   <li>Dates as <code>2026-03-29</code>, <code>29/03/2026</code> or Excel dates. No missing day: the model reads rows as consecutive days.</li>
   <li>Values as numbers. Columns that are not numeric are ignored.</li>
-  <li>Up to 3 years of daily history. CSV, Excel (.xlsx) or cells pasted from a spreadsheet.</li></ul>
+  <li>Up to 3 years of daily history. CSV, Excel (.xlsx) or cells pasted from a spreadsheet.</li>
+  <li>No file at hand? On the Data step, <b>Try with an example dataset</b> loads synthetic data with a known +20% effect.</li></ul>
   <div class="scroll"><table style="max-width:560px"><thead><tr><th>date</th><th class="n">orders</th><th class="n">category_searches</th><th class="n">competitor_searches</th></tr></thead><tbody><tr><td>2026-03-01</td><td class="n">412</td><td class="n">10 250</td><td class="n">3 120</td></tr><tr><td>2026-03-02</td><td class="n">398</td><td class="n">9 980</td><td class="n">3 045</td></tr><tr><td>…</td><td class="n">…</td><td class="n">…</td><td class="n">…</td></tr></tbody></table></div>
   <h3 id="rm-steps">The seven steps</h3>
   <p>The steps follow the protocol. You can go back at any time; a change upstream marks later results as <b>Stale</b>. Only the analysis is locked until the test sheet is frozen.</p>
@@ -2296,7 +2361,7 @@ const README = {
   <li><b>Design.</b> Set the pre-period, the intervention date (first day of real exposure) and the end of the post-period. Keep weekly seasonality on for daily data. Level prior: 0.01 by default, 0.1 if the series drifts. Fill in the framing (decision, H0, H1, business threshold): it is frozen with the test sheet.</li>
   <li><b>Covariates.</b> Tick the series to use. For each one, give a category and an H-A status: can the intervention move this series? Leave out exposed series. Check the small chart for a jump at the intervention date and the post / pre ratio. Guideline: one covariate per 10 pre-period points.</li>
   <li><b>Validation.</b> Run the hold-out and the placebos before reading any effect. Targets: hold-out MAPE under 10%, coverage close to 95%, at most 1 placebo in 5 robust, at least 4 placebo windows. The MDE gives the smallest effect the set-up can detect. If validation fails, change covariates or periods now.</li>
-  <li><b>Test sheet.</b> Review the sheet, record Go or No-go, then freeze it. Freezing locks the settings, stamps the time and the data fingerprint, and saves the test to History. Any later change needs a reason and goes to the deviation log.</li>
+  <li><b>Test sheet.</b> Record Go or No-go, review the sheet, then freeze it: the analysis starts right after. Freezing locks the settings, stamps the time and the data fingerprint, and saves the test to History. Any later change needs a reason and goes to the deviation log.</li>
   <li><b>Analysis.</b> Run the model on the frozen settings. Read the relative effect, its 95% interval, the confidence and its place on the grid. Compare the lower bound with the business threshold.</li>
   <li><b>Sensitivity.</b> Run the variants: other level prior, seasonality switched, one covariate removed at a time, later pre-period start. If a variant crosses a grid threshold, read the result at the most prudent level.</li></ol>
   <h3 id="rm-read">Read the result</h3>
@@ -2323,7 +2388,8 @@ const README = {
   <ul><li>Une ligne par jour, une colonne de dates, une colonne par série (format large).</li>
   <li>Dates au format <code>2026-03-29</code>, <code>29/03/2026</code> ou dates Excel. Aucun jour manquant : le modèle lit les lignes comme des jours consécutifs.</li>
   <li>Valeurs numériques. Les colonnes non numériques sont ignorées.</li>
-  <li>Jusqu'à 3 ans d'historique journalier. CSV, Excel (.xlsx) ou cellules collées depuis un tableur.</li></ul>
+  <li>Jusqu'à 3 ans d'historique journalier. CSV, Excel (.xlsx) ou cellules collées depuis un tableur.</li>
+  <li>Pas de fichier sous la main ? À l'étape Données, <b>Essayer avec un jeu d'exemple</b> charge des données synthétiques avec un effet connu de +20 %.</li></ul>
   <div class="scroll"><table style="max-width:560px"><thead><tr><th>date</th><th class="n">commandes</th><th class="n">recherches_categorie</th><th class="n">recherches_concurrent</th></tr></thead><tbody><tr><td>2026-03-01</td><td class="n">412</td><td class="n">10 250</td><td class="n">3 120</td></tr><tr><td>2026-03-02</td><td class="n">398</td><td class="n">9 980</td><td class="n">3 045</td></tr><tr><td>…</td><td class="n">…</td><td class="n">…</td><td class="n">…</td></tr></tbody></table></div>
   <h3 id="rm-steps">Les sept étapes</h3>
   <p>Les étapes suivent le protocole. Le retour en arrière est libre ; un changement en amont marque les résultats suivants <b>À relancer</b>. Seule l'analyse reste verrouillée tant que la fiche de test n'est pas figée.</p>
@@ -2332,7 +2398,7 @@ const README = {
   <li><b>Design.</b> Réglez la pré-période, la date d'intervention (premier jour d'exposition réelle) et la fin de la post-période. Gardez la saisonnalité hebdomadaire en journalier. Prior de niveau : 0,01 par défaut, 0,1 si la série dérive. Remplissez le cadrage (décision, H0, H1, seuil business) : il est figé avec la fiche de test.</li>
   <li><b>Covariables.</b> Cochez les séries à utiliser. Pour chacune, indiquez une catégorie et un statut H-A : l'intervention peut-elle faire bouger cette série ? Écartez les séries exposées. Regardez le petit graphique pour repérer un saut à la date d'intervention, et le ratio post / pré. Repère : une covariable pour 10 points de pré-période.</li>
   <li><b>Validation.</b> Lancez le hold-out et les placebos avant de lire un effet. Cibles : MAPE du hold-out sous 10 %, couverture proche de 95 %, au plus 1 placebo robuste sur 5, au moins 4 fenêtres placebo. La MDE donne le plus petit effet que le dispositif peut détecter. Si la validation échoue, changez les covariables ou les périodes maintenant.</li>
-  <li><b>Fiche de test.</b> Relisez la fiche, notez Go ou No-go, puis figez-la. Figer verrouille les réglages, horodate la fiche, enregistre l'empreinte des données et ajoute le test à l'historique. Tout changement ultérieur demande un motif et entre dans le journal des écarts.</li>
+  <li><b>Fiche de test.</b> Notez Go ou No-go, relisez la fiche, puis figez-la : l'analyse se lance aussitôt. Figer verrouille les réglages, horodate la fiche, enregistre l'empreinte des données et ajoute le test à l'historique. Tout changement ultérieur demande un motif et entre dans le journal des écarts.</li>
   <li><b>Analyse.</b> Lancez le modèle sur les réglages figés. Lisez l'effet relatif, son intervalle à 95 %, la confiance et sa place dans la grille. Comparez la borne basse au seuil business.</li>
   <li><b>Sensibilité.</b> Lancez les variantes : autre prior de niveau, saisonnalité inversée, retrait d'une covariable à la fois, début de pré-période plus tardif. Si une variante franchit un seuil de la grille, lisez le résultat au niveau le plus prudent.</li></ol>
   <h3 id="rm-read">Lire le résultat</h3>
