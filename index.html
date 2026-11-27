@@ -80,7 +80,7 @@ td select{min-height:34px;padding:4px 6px;font-size:13.5px;min-width:150px}
 .err-msg{color:var(--flag);font-size:14px;margin:8px 0 0}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:500}
 button.danger,.btn.danger{color:var(--flag);border-color:rgba(255,107,107,.45)}
-.note.info{border-left-color:var(--accent)}
+.note.info{border-left-color:var(--accent)}.note.demo-cta{max-width:760px;margin:14px 0 4px}
 .stepnav{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:36px 0 0;padding-top:18px;border-top:1px solid var(--line)}.stepnav .sp{flex:1}
 .running{color:var(--accent)}
 .status{position:fixed;right:16px;bottom:16px;max-width:min(620px,calc(100% - 32px));background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.6);padding:8px 10px 8px 16px;font-size:14px;display:flex;gap:12px;align-items:center;z-index:9}
@@ -1175,7 +1175,8 @@ function setData(data) {
   const same = S.data && S.data.hash === data.hash;
   S.data = data;
   if (!same) {
-    S.design = { ...blankDesign(), framing: S.design.framing };
+    S.design = { ...blankDesign(), framing: S.demo ? blankFraming() : S.design.framing };
+    if (S.demo) { S.demo = false; S.sheet.notes = ''; }
     S.design.kpi = data.names[0];
     S.design.preStart = data.dates[0];
     S.design.postEnd = data.dates[data.dates.length - 1];
@@ -1500,6 +1501,7 @@ function render() {
   if (r !== 'data' && !S.data) { view.innerHTML = `<div class="empty">${L('Import a dataset first.', "Importez d'abord un jeu de données.")} <a href="#data">${L('Go to Data', 'Aller à Données')}</a></div>`; return; }
   ({ data: vData, design: vDesign, covariates: vCovs, validation: vVal, sheet: vSheet, analysis: vAnalysis, sensitivity: vSens })[r]();
   if (S.data) view.insertAdjacentHTML('beforeend', stepNav(r));
+  if (S.demo) { view.insertAdjacentHTML('afterbegin', demoBanner()); $('#exitDemo').addEventListener('click', (e) => { e.preventDefault(); exitDemo(); }); }
   refreshButtons();
 }
 function stepNav(k) {
@@ -1523,7 +1525,7 @@ function vData() {
     <div class="field wide" id="xlsxPick" hidden></div>
   </div>
   <p class="err-msg" id="importErr" role="alert" hidden></p>
-  ${d ? '' : `<div class="row"><button type="button" id="exampleGo">${L('Try with an example dataset', 'Essayer avec un jeu d\'exemple')}</button><span class="small muted">${L('Synthetic daily data, 14 months, with a +20% effect from 1 Sep 2026.', 'Données journalières synthétiques sur 14 mois, avec un effet de +20 % à partir du 1 sept. 2026.')}</span></div>`}
+  ${d ? '' : `<div class="note info demo-cta"><b>${L('First time here? Try the tool on the demo dataset.', "Première visite ? Prenez l'outil en main avec le jeu de démonstration.")}</b> ${L('Anonymised synthetic data (14 months, daily) with a known +20% effect. The design is already filled in: you go straight to the steps and can run validation, freeze and analysis in a few clicks.', "Données synthétiques anonymisées (14 mois, journalières) avec un effet connu de +20 %. Le design est déjà rempli : vous passez directement aux étapes et lancez validation, gel et analyse en quelques clics.")}<div class="row" style="margin-bottom:0"><button type="button" class="primary" id="exampleGo">${L('Try with the demo dataset', 'Tester avec le jeu de démonstration')}</button></div></div>`}
   <details><summary class="small muted" style="cursor:pointer">${L('Paste a table instead', 'Coller un tableau à la place')}</summary><div class="field" style="margin-top:8px"><textarea id="paste" rows="5" placeholder="${esc(L('Paste cells copied from a spreadsheet (tab separated), header row first', "Collez des cellules copiées d'un tableur (séparées par des tabulations), ligne d'en-tête en premier"))}"></textarea></div><div class="row"><button type="button" id="pasteGo">${L('Import pasted table', 'Importer le tableau collé')}</button></div></details>`;
   if (d) {
     const q = qc(); const nd = d.dates.length; const g = q.gaps; const nDup = d.dups.length; const nb = d.badDates;
@@ -1569,17 +1571,52 @@ function exampleRows() {
     const demand = 1000 + 200 * Math.sin((2 * Math.PI * t) / 365) + gauss(40); const comp = 300 + 0.15 * demand + gauss(15);
     const weather = 15 + 10 * Math.sin((2 * Math.PI * (t - 100)) / 365) + gauss(2); lvl += gauss(1.5);
     const post = iso >= '2026-09-01' && iso <= '2026-10-15';
-    const kpi = ((120 + 0.25 * demand + 0.1 * comp + lvl) * wd + gauss(8)) * (post ? 1.2 : 1);
-    const brand = (500 + 0.2 * demand) * (post ? 1.3 : 1) + gauss(20);
+    const base = (120 + 0.25 * demand + 0.1 * comp + lvl) * wd;
+    const kpi = (base + gauss(8)) * (post ? 1.2 : 1);
+    const brand = (3 * base + gauss(25)) * (post ? 1.2 : 1); // exposed: moves with the campaign
     rows.push([iso, kpi.toFixed(1), demand.toFixed(1), comp.toFixed(1), weather.toFixed(2), brand.toFixed(1), '50']);
   }
   return rows;
 }
-function loadExample() {
-  importRows(exampleRows(), L('Example dataset', "Jeu d'exemple"));
-  if (!S.data) return;
-  S.design.intervention = '2026-09-01'; changed('design.intervention'); S.design.postEnd = '2026-10-15'; save(); render();
-  toast(L('Example loaded: intervention on 1 Sep 2026, post-period to 15 Oct 2026. Choose the covariates next.', "Jeu d'exemple chargé : intervention le 1 sept. 2026, post-période jusqu'au 15 oct. 2026. Choisissez ensuite les covariables."));
+// Demo: the example dataset with a ready design (periods, covariates with H-A status, framing)
+const DEMO_FLAG = 'ci-tool-demo-seeded-v1', DEMO_ID = 'demo-v1';
+function demoState() {
+  const s = fresh();
+  s.data = buildDataset(exampleRows(), L('Demo dataset (anonymised)', 'Jeu de démonstration (anonymisé)'));
+  s.design = { ...s.design, kpi: 'kpi_orders', preStart: '2025-09-01', preEnd: '2026-08-31', intervention: '2026-09-01', postEnd: '2026-10-15',
+    framing: { ...blankFraming(),
+      decision: L('Renew the video campaign at the same budget?', 'Reconduire la campagne vidéo au même budget ?'),
+      event: L('Demo video campaign, 1 Sep to 15 Oct 2026', 'Campagne vidéo de démonstration, du 1 sept. au 15 oct. 2026'),
+      h0: L('The campaign has no effect on daily orders.', "La campagne n'a pas d'effet sur les commandes journalières."),
+      h1: L('The campaign raises daily orders, independently of category demand, competition and weather.', 'La campagne augmente les commandes journalières, indépendamment de la demande de catégorie, de la concurrence et de la météo.'),
+      eventsPre: L('None known (synthetic data).', 'Aucun connu (données synthétiques).'), eventsPost: L('None known (synthetic data).', 'Aucun connu (données synthétiques).'),
+      tracking: L('Synthetic data: no tracking change.', 'Données synthétiques : aucun changement de tracking.'), threshold: 5 } };
+  s.covs = { cov_category_demand: { on: true, cat: 'Market demand', status: 'Intact' }, cov_competitor: { on: true, cat: 'Competition', status: 'Intact' }, cov_weather: { on: true, cat: 'Seasonality', status: 'Intact' }, cov_brand_searches: { on: false, cat: 'Brand', status: 'Exposed' }, cov_constant: { on: false, cat: '', status: 'Not reviewed' } };
+  s.demo = true;
+  return s;
+}
+function loadDemo() {
+  S = demoState(); clearResults(); save(); location.hash = 'design'; render(); window.scrollTo(0, 0);
+  toast(L('Demo loaded with its design. Next: Covariates, then Validation.', 'Démo chargée avec son design. Ensuite : Covariables, puis Validation.'));
+}
+function exitDemo() { S = fresh(); clearResults(); save(); location.hash = 'data'; render(); }
+const demoBanner = () => `<div class="note info"><b>${L('Demo mode.', 'Mode démo.')}</b> ${L('Anonymised synthetic data with a real +20% effect from 1 Sep to 15 Oct 2026. The brand searches covariate is marked as exposed on purpose: tick it to see how it lowers the effect.', "Données synthétiques anonymisées avec un effet réel de +20 % du 1 sept. au 15 oct. 2026. La covariable de recherches de marque est volontairement marquée exposée : cochez-la pour voir comment elle fait baisser l'effet.")} <a href="#data" id="exitDemo">${L('Leave the demo and import my data', 'Quitter la démo et importer mes données')}</a></div>`;
+// A finished demo test in History on the first visit, so the History screen is not empty
+async function seedDemoHistory() {
+  try { if (localStorage.getItem(DEMO_FLAG)) return; } catch (e) { return; }
+  try {
+    if ((await histAll()).some((x) => x.id === DEMO_ID)) { localStorage.setItem(DEMO_FLAG, '1'); return; }
+    const s = demoState(); s.id = DEMO_ID; s.sheet.go = 'Go';
+    const keep = S; let payload;
+    S = s; try { s.sheet.frozen = snapshot(); payload = frozenRun().payload; } finally { S = keep; }
+    const out = await call('analysis', payload);
+    const sm = out.summary, av = sm.average, f = s.sheet.frozen, at = new Date().toISOString();
+    await histPutRaw({ id: DEMO_ID, savedAt: at, firstSavedAt: at, frozenAt: f.at, kpi: s.design.kpi, event: s.design.framing.event, intervention: s.design.intervention, postEnd: s.design.postEnd,
+      covariates: Object.keys(f.covs).filter((k) => f.covs[k].on).length, source: s.data.source, amendments: 0,
+      result: { relEffect: av.relEffect, lower: av.relEffectLower, upper: av.relEffectUpper, probCausal: sm.probCausal, band: out.band, frozenAt: f.at }, state: JSON.parse(JSON.stringify(s)) });
+    localStorage.setItem(DEMO_FLAG, '1');
+    if (route() === 'history') vHistory();
+  } catch (e) { /* history unavailable or computation cancelled: try again on the next visit */ }
 }
 async function importFile(f) {
   try {
@@ -1594,7 +1631,7 @@ async function importFile(f) {
   } catch (e) { importError(e.message); }
 }
 function bindImport() {
-  $('#exampleGo') && $('#exampleGo').addEventListener('click', loadExample);
+  $('#exampleGo') && $('#exampleGo').addEventListener('click', loadDemo);
   const drop = $('#drop'), file = $('#file');
   file.addEventListener('change', () => file.files[0] && importFile(file.files[0]));
   drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
@@ -2352,7 +2389,7 @@ const README = {
   <li>Dates as <code>2026-03-29</code>, <code>29/03/2026</code> or Excel dates. No missing day: the model reads rows as consecutive days.</li>
   <li>Values as numbers. Columns that are not numeric are ignored.</li>
   <li>Up to 3 years of daily history. CSV, Excel (.xlsx) or cells pasted from a spreadsheet.</li>
-  <li>No file at hand? On the Data step, <b>Try with an example dataset</b> loads synthetic data with a known +20% effect.</li></ul>
+  <li>No file at hand? On the Data step, <b>Try with the demo dataset</b> loads anonymised synthetic data with a known +20% effect and a design already filled in. A finished demo test is also waiting in History.</li></ul>
   <div class="scroll"><table style="max-width:560px"><thead><tr><th>date</th><th class="n">orders</th><th class="n">category_searches</th><th class="n">competitor_searches</th></tr></thead><tbody><tr><td>2026-03-01</td><td class="n">412</td><td class="n">10 250</td><td class="n">3 120</td></tr><tr><td>2026-03-02</td><td class="n">398</td><td class="n">9 980</td><td class="n">3 045</td></tr><tr><td>…</td><td class="n">…</td><td class="n">…</td><td class="n">…</td></tr></tbody></table></div>
   <h3 id="rm-steps">The seven steps</h3>
   <p>The steps follow the protocol. You can go back at any time; a change upstream marks later results as <b>Stale</b>. Only the analysis is locked until the test sheet is frozen.</p>
@@ -2389,7 +2426,7 @@ const README = {
   <li>Dates au format <code>2026-03-29</code>, <code>29/03/2026</code> ou dates Excel. Aucun jour manquant : le modèle lit les lignes comme des jours consécutifs.</li>
   <li>Valeurs numériques. Les colonnes non numériques sont ignorées.</li>
   <li>Jusqu'à 3 ans d'historique journalier. CSV, Excel (.xlsx) ou cellules collées depuis un tableur.</li>
-  <li>Pas de fichier sous la main ? À l'étape Données, <b>Essayer avec un jeu d'exemple</b> charge des données synthétiques avec un effet connu de +20 %.</li></ul>
+  <li>Pas de fichier sous la main ? À l'étape Données, <b>Tester avec le jeu de démonstration</b> charge des données synthétiques anonymisées avec un effet connu de +20 % et un design déjà rempli. Un test de démo terminé attend aussi dans l'historique.</li></ul>
   <div class="scroll"><table style="max-width:560px"><thead><tr><th>date</th><th class="n">commandes</th><th class="n">recherches_categorie</th><th class="n">recherches_concurrent</th></tr></thead><tbody><tr><td>2026-03-01</td><td class="n">412</td><td class="n">10 250</td><td class="n">3 120</td></tr><tr><td>2026-03-02</td><td class="n">398</td><td class="n">9 980</td><td class="n">3 045</td></tr><tr><td>…</td><td class="n">…</td><td class="n">…</td><td class="n">…</td></tr></tbody></table></div>
   <h3 id="rm-steps">Les sept étapes</h3>
   <p>Les étapes suivent le protocole. Le retour en arrière est libre ; un changement en amont marque les résultats suivants <b>À relancer</b>. Seule l'analyse reste verrouillée tant que la fiche de test n'est pas figée.</p>
@@ -2510,6 +2547,7 @@ $('#newTest').addEventListener('click', () => {
 });
 
 render();
+setTimeout(seedDemoHistory, 800);
 }
 
 </script>
