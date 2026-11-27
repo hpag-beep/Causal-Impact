@@ -118,6 +118,7 @@ dl.gl{margin:0}.gl-item{padding:10px 0;border-bottom:1px solid var(--line)}.gl-i
     <h1>Causal Impact</h1>
     <span class="muted small" id="engv">Engine loading</span>
     <span class="sp"></span>
+    <button type="button" id="demoBtn">Demo</button>
     <a class="btn" href="#readme" id="readmeBtn">Read me</a>
     <a class="btn" href="#glossary" id="glossBtn">Glossary</a>
     <details class="menu" id="presetMenu"><summary class="btn" id="presetSum">Presets</summary><div class="pop" id="presetPop"></div></details>
@@ -1483,6 +1484,7 @@ function renderChrome() {
   document.documentElement.lang = LANG;
   $('#engv').textContent = engLabel();
   $('#readmeBtn').textContent = L('Read me', "Mode d'emploi");
+  if (!demoArmed) $('#demoBtn').textContent = L('Demo', 'Démo');
   $('#glossBtn').textContent = L('Glossary', 'Lexique');
   $('#presetSum').textContent = L('Presets', 'Réglages');
   $('#histBtn').textContent = L('History', 'Historique');
@@ -1514,6 +1516,7 @@ function stepNav(k) {
 window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
 function setLang(l) { if (l === LANG || (l !== 'en' && l !== 'fr')) return; LANG = l; try { localStorage.setItem(LKEY, l); } catch (e) { /* storage unavailable */ } render(); }
 $$('#langSw button').forEach((b) => b.addEventListener('click', () => setLang(b.dataset.lang)));
+$('#demoBtn').addEventListener('click', (e) => askDemo(e.currentTarget));
 const lockNote = () => (frozen() ? `<div class="note info">${L('The test sheet is frozen, so these settings are locked.', 'La fiche de test est figée : ces réglages sont verrouillés.')} <a href="#sheet">${L('Amend the test sheet', 'Amender la fiche')}</a></div>` : '');
 
 // ---------------- 1. Data
@@ -1525,6 +1528,7 @@ function vData() {
     <div class="field wide" id="xlsxPick" hidden></div>
   </div>
   <p class="err-msg" id="importErr" role="alert" hidden></p>
+  ${d && !S.demo ? `<div class="row"><button type="button" id="exampleGo">${L('Try with the demo dataset', 'Tester avec le jeu de démonstration')}</button><span class="small muted">${L('Replaces the test in progress; frozen tests stay in History.', "Remplace le test en cours ; les tests figés restent dans l'historique.")}</span></div>` : ''}
   ${d ? '' : `<div class="note info demo-cta"><b>${L('First time here? Try the tool on the demo dataset.', "Première visite ? Prenez l'outil en main avec le jeu de démonstration.")}</b> ${L('Anonymised synthetic data (14 months, daily) with a known +20% effect. The design is already filled in: you go straight to the steps and can run validation, freeze and analysis in a few clicks.', "Données synthétiques anonymisées (14 mois, journalières) avec un effet connu de +20 %. Le design est déjà rempli : vous passez directement aux étapes et lancez validation, gel et analyse en quelques clics.")}<div class="row" style="margin-bottom:0"><button type="button" class="primary" id="exampleGo">${L('Try with the demo dataset', 'Tester avec le jeu de démonstration')}</button></div></div>`}
   <details><summary class="small muted" style="cursor:pointer">${L('Paste a table instead', 'Coller un tableau à la place')}</summary><div class="field" style="margin-top:8px"><textarea id="paste" rows="5" placeholder="${esc(L('Paste cells copied from a spreadsheet (tab separated), header row first', "Collez des cellules copiées d'un tableur (séparées par des tabulations), ligne d'en-tête en premier"))}"></textarea></div><div class="row"><button type="button" id="pasteGo">${L('Import pasted table', 'Importer le tableau collé')}</button></div></details>`;
   if (d) {
@@ -1595,6 +1599,15 @@ function demoState() {
   s.demo = true;
   return s;
 }
+let demoArmed = null;
+function askDemo(btn) {
+  const risky = S.data && !S.demo && !frozen();
+  if (risky && demoArmed !== btn) {
+    demoArmed = btn; const old = btn.textContent; btn.textContent = L('Click again: the draft in progress is replaced', 'Cliquez à nouveau : le brouillon en cours sera remplacé');
+    setTimeout(() => { if (demoArmed === btn) { demoArmed = null; btn.textContent = old; } }, 4000); return;
+  }
+  demoArmed = null; loadDemo();
+}
 function loadDemo() {
   S = demoState(); clearResults(); save(); location.hash = 'design'; render(); window.scrollTo(0, 0);
   toast(L('Demo loaded with its design. Next: Covariates, then Validation.', 'Démo chargée avec son design. Ensuite : Covariables, puis Validation.'));
@@ -1631,7 +1644,7 @@ async function importFile(f) {
   } catch (e) { importError(e.message); }
 }
 function bindImport() {
-  $('#exampleGo') && $('#exampleGo').addEventListener('click', loadDemo);
+  $('#exampleGo') && $('#exampleGo').addEventListener('click', (e) => askDemo(e.currentTarget));
   const drop = $('#drop'), file = $('#file');
   file.addEventListener('change', () => file.files[0] && importFile(file.files[0]));
   drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
